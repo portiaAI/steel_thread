@@ -33,10 +33,10 @@ Documentation = "https://docs.portialabs.ai"
 
 
 [tool.hatch.build.targets.sdist]
-include = ["portia"]
+include = ["steelthread"]
 
 [tool.hatch.build.targets.wheel]
-include = ["portia"]
+include = ["steelthread"]
 
 [build-system]
 requires = ["hatchling"]

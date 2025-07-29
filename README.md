@@ -10,15 +10,15 @@
 
 #### `pip`
 ```bash
-pip install steelthread
+pip install steel-thread
 ```
 #### `poetry`
 ```bash
-poetry add steelthread
+poetry add steel-thread
 ```
 #### `uv`
 ```bash
-uv add steelthread
+uv add steel-thread
 ```
 
 ---
