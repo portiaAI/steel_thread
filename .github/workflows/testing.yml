@@ -1,0 +1,38 @@
+name: Python Testing
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - labeled
+
+# Add concurrency to cancel in-progress runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  testing:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest-16core
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: install uv
+        run: pipx install uv
+
+      - name: install dependencies
+        run: uv sync --all-extras
+
+      - name: tests + coverage
+        run: |
+          set -o pipefail
+          uv run pytest -m "not daily" -n 8 --cov --cov-fail-under 100 --log-cli-level=WARNING --junitxml=pytest.xml | tee pytest-coverage.txt

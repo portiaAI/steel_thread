@@ -1,0 +1,140 @@
+[project]
+name = "steel-thread"
+version = "0.1.0"
+description = "Portia Labs Eval framework for evaluating agentic workflows."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+keywords = [
+    "LLM",
+    "agentic",
+    "workflow",
+]
+classifiers = ["Development Status :: 3 - Alpha"]
+
+dependencies = [
+    "httpx>=0.28.1",
+    "portia-sdk-python>=0.5.0",
+    "pydantic>=2.11.7",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.2.0",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "ruff>=0.12.5",
+]
+
+[project.urls]
+Homepage = "https://www.portialabs.ai/"
+Repository = "https://github.com/portiaAI/portia-sdk-python"
+Documentation = "https://docs.portialabs.ai"
+
+
+[tool.hatch.build.targets.sdist]
+include = ["portia"]
+
+[tool.hatch.build.targets.wheel]
+include = ["portia"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pyright]
+ignore = ["scratch/*"]
+
+[tool.ruff]
+line-length=100
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "COM812",  # Disables checks for trailing commas as they are fixed by the formatted and running both is not recommended.
+  "D203",    # Disables checks for having a blank line before a class docstring. We instead have no-blank-line-before-class (D211) enabled.
+  "D213",    # Disables checks for multi-line docstrings not starting on the first line. We instead have multi-line-summary-first-line (D212) enabled.
+  "EM101",   # Disables checks for missing exception message arguments. We prefer single-line exception statements for simplicity and terseness.
+  "EM102",   # Disables checks for f-string usage in exception messages. We prefer single-line exception statements with f-strings for simplicity and terseness.
+  "TRY003",  # Disables checks for long error messages. We prefer to provide as much context to users as possible but want to avoid a proliferation of error classes.
+  "FBT001",  # Disables checks for unused type parameters. We prefer booleans for simple parameters rather than unnecessary enums.
+  "FBT002",  # Disables checks for unused type parameters. We prefer booleans for simple parameters rather than unnecessary enums.
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = [
+  "S101",    # Disables check for asserts. Asserts in test cases can be useful.
+  "PLR2004", # Disables magic number checks. Its normal to assert using magic numbers for things like array length.
+  "INP001",  # Disables checks for implicit namespace packages. Tests are not part of the package.
+  "SLF001",  # Disables checks for private member access. We call private methods in tests.
+  "C901",    # Disables checks for too many lines in function. Tests are allowed to be longer.
+]
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = [
+  "pydantic.BaseModel", # Tells ruff that BaseModel instances need to be evaluated at runtime.
+]
+
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true  # Allows **kwargs: Any in type signatures.
+
+[tool.ruff.lint.pylint]
+max-args = 10
+
+[tool.setuptools.package-data]
+portia = ["templates/**/*.jinja"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:Failing to pass a value to the 'type_params' parameter of 'typing.ForwardRef._evaluate':DeprecationWarning",  # LangChain
+    "ignore::DeprecationWarning:langchain_core.load.serializable",  # LangChain/Pydantic
+    "ignore:Support for class-based `config` is deprecated.*:DeprecationWarning:pydantic._internal._config",  # Pydantic V2 deprecation
+]
+addopts = [
+  "--cov=steelthread",
+  "--cov-report=term-missing",
+  "--cov-report=html",
+  "--import-mode=importlib"
+]
+markers = [
+    "daily: marks tests as expensive daily tests (deselect with '-m \"not daily\"')",
+]
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*", # Don't cover test files themselves
+    "example.py", # Don't cover example
+    "*/_unstable/**",  # Don't check _unstable files
+    "portia/cli.py",  # Best effort test coverage
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "if TYPE_CHECKING:",
+    "pragma: no cover",
+]
+
+[[tool.pydoc-markdown.loaders]]
+type = "python"
+
+[[tool.pydoc-markdown.processors]]
+type = "filter"
+expression = "not 'test' in name and not 'cli' in name and not 'prefixed_uuid' in name and not 'common' in name and not 'templates' in name and not '_unstable' in name and default()"
+skip_empty_modules = true
+
+[[tool.pydoc-markdown.processors]]
+type = "smart"
+
+[[tool.pydoc-markdown.processors]]
+type = "crossref"
+
+[tool.pydoc-markdown.renderer]
+type = "docusaurus"
+relative_output_path="evals"
+sidebar_top_level_label=""
+
+[tool.licensecheck]
+using = "uv"
+ignore_packages = [
+  "mistralai", # MistralAI is Apache 2.0 licensed: https://github.com/mistralai/client-python?tab=Apache-2.0-1-ov-file
+] 

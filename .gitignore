@@ -1,0 +1,13 @@
+dist
+__pycache__
+.coverage
+.coverage.*
+test_harness.py
+htmlcov
+docs
+.venv
+*.env
+.vscode
+.portia
+scratch
+.DS_Store

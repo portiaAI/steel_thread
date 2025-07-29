@@ -1,0 +1,68 @@
+name: Version Tag Creation
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to create tag from'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - main
+          - production
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Get version from pyproject.toml
+        id: get_version
+        run: |
+          VERSION=$(uv version --short)
+          echo "Version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Check if version is already tagged
+        run: |
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists. Skipping tag creation."
+            echo "tag_exists=true" >> $GITHUB_ENV
+          else
+            echo "Tag $VERSION does not exist. Creating new tag."
+          fi
+
+      - name: Create Git tag
+        if: env.tag_exists != 'true'
+        run: |
+          git tag $VERSION
+
+      - name: Push changes
+        if: env.tag_exists != 'true'
+        run: |
+          git push origin $VERSION
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to PyPI
+        if: env.tag_exists != 'true'
+        run: |
+          export POETRY_PYPI_TOKEN_PYPI=${{secrets.POETRY_PYPI_TOKEN_PYPI}}
+          uv build
+          uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}

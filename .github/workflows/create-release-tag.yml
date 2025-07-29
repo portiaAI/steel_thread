@@ -1,0 +1,67 @@
+name: Create Release Tag
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  create-tag:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+  
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Get version from pyproject.toml
+        id: get_version
+        run: |
+          VERSION=$(uv version --short)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create tag
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.DEPLOY_PAT_TOKEN }}
+          script: |
+            const version = 'v${{ steps.get_version.outputs.version }}';
+            const sha = context.sha;
+
+            try {
+              await github.rest.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `refs/tags/${version}`,
+                sha: sha
+              });
+              console.log(`Successfully created tag ${version}`);
+            } catch (error) {
+              core.setFailed(`Failed to create tag: ${error.message}`);
+            }
+
+      - name: Create latest prod release tag tag
+        if: ${{ !contains(steps.get_version.outputs.version, 'a') }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.DEPLOY_PAT_TOKEN }}
+          script: |
+            const sha = context.sha;
+
+            try {
+              await github.rest.git.updateRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/latest-prod-release`,
+                sha: sha,
+                force: true
+              });
+              console.log(`Successfully created tag latest-prod-release`);
+            } catch (error) {
+              core.setFailed(`Failed to create tag: ${error.message}`);
+            } 
