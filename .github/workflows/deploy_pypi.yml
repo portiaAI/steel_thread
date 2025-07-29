@@ -3,8 +3,8 @@ name: Release to PyPI
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+a[0-9]+"
 
 permissions:
   contents: read
@@ -46,13 +46,13 @@ jobs:
         run: |
           uv build
           uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
-        
+
       - name: Notify Slack on success
         if: success()
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          channel-id: '${{ vars.SLACK_DEV_CHANNEL }}'
-          slack-message: "✅ Successfully published SDK version ${{ steps.get_tag_version.outputs.tag_version }} to PyPI! 🎉"
+          channel-id: "${{ vars.SLACK_DEV_CHANNEL }}"
+          slack-message: "🧵🧵🧵 Successfully published Steel Thread version ${{ steps.get_tag_version.outputs.tag_version }} to PyPI! 🧵🧵🧵"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
@@ -60,7 +60,7 @@ jobs:
         if: failure()
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          channel-id: '${{ vars.SLACK_RUN_CHANNEL }}'
-          slack-message: "❌ Failed to publish version ${{ steps.get_tag_version.outputs.tag_version }} to PyPI.\nSee: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          channel-id: "${{ vars.SLACK_RUN_CHANNEL }}"
+          slack-message: "❌ Failed to publish Steel Thread version ${{ steps.get_tag_version.outputs.tag_version }} to PyPI.\nSee: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
