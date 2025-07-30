@@ -2079,7 +2079,7 @@ wheels = [
 
 [[package]]
 name = "steel-thread"
-version = "0.1.0"
+version = "0.1.2a0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },

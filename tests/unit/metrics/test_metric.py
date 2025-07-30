@@ -1,6 +1,7 @@
 """Test metrics backend."""
 
 import pytest
+from pydantic import ValidationError
 
 from steelthread.common.models import EvalRun
 from steelthread.metrics.metric import (
@@ -74,3 +75,9 @@ def test_attach_tags() -> None:
         },
     )
     assert result == expected
+
+
+def test_metric_explanation() -> None:
+    """Check short explanations raise."""
+    with pytest.raises(ValidationError):
+        Metric(score=10, name="test", description="test", explanation="123")

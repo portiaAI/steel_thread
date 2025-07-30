@@ -41,8 +41,8 @@ def test_eval_plan_run_uses_llm(mock_scorer_class: MagicMock) -> None:
     mock_scorer_class.return_value = mock_scorer
 
     evaluator = LLMJudgeOnlineEvaluator(config=MagicMock())
-    _, plan_run = get_test_plan_run()
-    result = evaluator.eval_plan_run(plan_run)
+    plan, plan_run = get_test_plan_run()
+    result = evaluator.eval_plan_run(plan, plan_run)
 
     assert result == [
         Metric(name="dummy", description="desc", score=1.0),
