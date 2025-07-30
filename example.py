@@ -22,7 +22,7 @@ st = SteelThread()
 
 
 # Run online evals
-st.run_online(OnlineEvalConfig(data_set_name="online_evals", config=config))
+st.run_online(OnlineEvalConfig(data_set_name="online_evals_v1", config=config))
 
 # Run offline evals
 portia = Portia(config)

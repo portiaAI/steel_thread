@@ -4,9 +4,11 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 from portia import Config
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from steelthread.common.models import EvalRun
+
+MIN_EXPLANATION_LENGTH = 10
 
 
 class Metric(BaseModel):
@@ -22,6 +24,17 @@ class Metric(BaseModel):
     score: float
     name: str
     description: str
+    explanation: str | None = Field(
+        default=None, description="An optional explanation of the score."
+    )
+
+    @field_validator("explanation")
+    @classmethod
+    def explanation_min_length(cls, v: str | None) -> str | None:
+        """If an explanation is provided it must have length."""
+        if v is not None and len(v) < MIN_EXPLANATION_LENGTH:
+            raise ValueError("explanation must be at least 5 characters long")
+        return v
 
 
 class MetricWithTag(BaseModel):
@@ -32,6 +45,7 @@ class MetricWithTag(BaseModel):
         name (str): The name of the metric.
         description (str): A human-readable description of the metric.
         tags (dict[str, str]): Key-value pairs describing metadata (e.g., model names).
+        explanation (str | None): An optional explanation of why this score is such.
 
     """
 
@@ -39,6 +53,7 @@ class MetricWithTag(BaseModel):
     name: str
     description: str
     tags: dict[str, str]
+    explanation: str | None = None
 
 
 class MetricList(BaseModel):

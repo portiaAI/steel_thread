@@ -7,10 +7,8 @@ from pydantic import BaseModel, SecretStr
 
 from steelthread.common.llm import (
     LLMMetricScorer,
-    MetricWithExplanation,
-    MetricWithExplanationList,
 )
-from steelthread.metrics.metric import Metric
+from steelthread.metrics.metric import Metric, MetricList
 
 BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
 
@@ -26,25 +24,21 @@ class MockConfig(Config):
         self,
         _: list[Message],
         schema: type[BaseModelT],
-    ) -> MetricWithExplanationList:
+    ) -> MetricList:
         """Return hardcoded metrics."""
-        assert issubclass(schema, MetricWithExplanationList)
-        return MetricWithExplanationList(
+        assert issubclass(schema, MetricList)
+        return MetricList(
             metrics=[
-                MetricWithExplanation(
-                    metric=Metric(
-                        name="accuracy",
-                        description="How accurate the response was",
-                        score=0.95,
-                    ),
+                Metric(
+                    name="accuracy",
+                    description="How accurate the response was",
+                    score=0.95,
                     explanation="Very accurate result.",
                 ),
-                MetricWithExplanation(
-                    metric=Metric(
-                        name="clarity",
-                        description="How clear the response was",
-                        score=0.9,
-                    ),
+                Metric(
+                    name="clarity",
+                    description="How clear the response was",
+                    score=0.9,
                     explanation="Clear and understandable.",
                 ),
             ]

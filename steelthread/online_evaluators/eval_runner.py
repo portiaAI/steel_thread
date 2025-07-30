@@ -108,14 +108,14 @@ class OnlineEvalRunner:
 
     def _evaluate_test_case(self, tc: OnlineTestCase) -> list[MetricWithTag]:
         """Evaluate a single test case across all iterations and evaluators."""
-        obj = self._load_target(tc)
-        if obj is None:
+        plan, plan_run = self._load_target(tc)
+        if plan is None:
             return []
 
         metrics_out = []
         for _ in range(self.config.iterations):
             for evaluator in self.config.evaluators:
-                metrics = self._evaluate(evaluator, tc, obj)
+                metrics = self._evaluate(evaluator, tc, plan, plan_run)
                 if metrics:
                     metrics_out.extend(
                         MetricTagger.attach_tags(
@@ -128,7 +128,7 @@ class OnlineEvalRunner:
         self.backend.mark_processed(tc)
         return metrics_out
 
-    def _load_target(self, tc: OnlineTestCase) -> Plan | PlanRun | None:
+    def _load_target(self, tc: OnlineTestCase) -> tuple[Plan | None, PlanRun | None]:
         """Load the plan or plan run associated with a test case.
 
         Args:
@@ -141,36 +141,38 @@ class OnlineEvalRunner:
         if tc.related_item_type == "plan":
             return self.storage.get_plan(
                 PlanUUID.from_string(f"{PLAN_UUID_PREFIX}-{tc.related_item_id}")
-            )
+            ), None
         if tc.related_item_type == "plan_run":
-            return self.storage.get_plan_run(
+            plan_run = self.storage.get_plan_run(
                 PlanRunUUID.from_string(f"{PLAN_RUN_UUID_PREFIX}-{tc.related_item_id}")
             )
-        return None
+            plan = self.storage.get_plan(plan_run.plan_id)
+            return plan, plan_run
+        return None, None
 
     def _evaluate(
         self,
         evaluator: OnlineEvaluator,
         tc: OnlineTestCase,
-        obj: Plan | PlanRun,
+        plan: Plan,
+        plan_run: PlanRun | None,
     ) -> list[Metric] | Metric | None:
         """Apply the evaluator to a given test case object.
 
         Args:
             evaluator (OnlineEvaluator): The evaluator to use.
-            tc: The test case to evaluate.
-            obj: The plan or plan run being evaluated.
+            tc (OnlineTestCase): The test case to evaluate.
+            plan (Plan): The plan to evaluate
+            plan_run (PlanRun | None): The plan_run to evaluate
 
         Returns:
             list[Metric] | Metric | None: The evaluation result.
 
         """
         if tc.related_item_type == "plan":
-            if not isinstance(obj, Plan):
-                raise ValueError("cannot eval plan when provided plan_run")
-            return evaluator.eval_plan(obj)
+            return evaluator.eval_plan(plan)
         if tc.related_item_type == "plan_run":
-            if not isinstance(obj, PlanRun):
-                raise ValueError("cannot eval plan-run when provided plan")
-            return evaluator.eval_plan_run(obj)
+            if not plan_run:
+                raise ValueError("cannot eval plan-run when plan run is not provided")
+            return evaluator.eval_plan_run(plan, plan_run)
         raise ValueError("invalid related item type")

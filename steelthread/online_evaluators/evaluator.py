@@ -42,10 +42,11 @@ class OnlineEvaluator(ABC):
         return []
 
     @abstractmethod
-    def eval_plan_run(self, plan_run: PlanRun) -> list[Metric] | Metric | None:
+    def eval_plan_run(self, plan: Plan, plan_run: PlanRun) -> list[Metric] | Metric | None:
         """Evaluate a completed PlanRun (runtime output available).
 
         Args:
+            plan (Plan): The Plan the PlanRun is linked to.
             plan_run (PlanRun): The executed PlanRun object to evaluate.
 
         Returns:

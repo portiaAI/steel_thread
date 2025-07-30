@@ -23,7 +23,7 @@ class DummyEvaluator(OnlineEvaluator):
         """Return metrics."""
         return [Metric(name="plan_metric", description="desc", score=1.0)]
 
-    def eval_plan_run(self, plan_run: PlanRun) -> list[Metric]:  # noqa: ARG002
+    def eval_plan_run(self, plan: Plan, plan_run: PlanRun) -> list[Metric]:  # noqa: ARG002
         """Return metrics."""
         return [Metric(name="plan_run_metric", description="desc", score=0.5)]
 
@@ -93,7 +93,7 @@ def test_run_with_plan_run(monkeypatch: MonkeyPatch, online_eval_config: OnlineE
     dummy_test_case = OnlineTestCase(
         id="", related_item_type="plan_run", related_item_id=str(uuid4())
     )
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
 
     monkeypatch.setattr(
         "steelthread.online_evaluators.eval_runner.PortiaBackend.load_online_evals",
@@ -105,7 +105,7 @@ def test_run_with_plan_run(monkeypatch: MonkeyPatch, online_eval_config: OnlineE
     )
     monkeypatch.setattr(
         "steelthread.online_evaluators.eval_runner.PortiaCloudStorage.get_plan",
-        lambda self, _: None,  # noqa: ARG005
+        lambda self, _: plan,  # noqa: ARG005
     )
     monkeypatch.setattr(
         "steelthread.online_evaluators.eval_runner.PortiaBackend.mark_processed",
@@ -161,29 +161,6 @@ def test_run_with_wrong_types(
     monkeypatch: MonkeyPatch, online_eval_config: OnlineEvalConfig
 ) -> None:
     """Test with wrong types."""
-    dummy_test_case = OnlineTestCase(id="", related_item_type="plan", related_item_id=str(uuid4()))
-
-    monkeypatch.setattr(
-        "steelthread.online_evaluators.eval_runner.PortiaBackend.load_online_evals",
-        lambda self, _: [dummy_test_case],  # noqa: ARG005
-    )
-    monkeypatch.setattr(
-        "steelthread.online_evaluators.eval_runner.PortiaCloudStorage.get_plan",
-        lambda self, _: MagicMock(),  # noqa: ARG005
-    )
-    monkeypatch.setattr(
-        "steelthread.online_evaluators.eval_runner.PortiaCloudStorage.get_plan_run",
-        lambda self, _: None,  # noqa: ARG005
-    )
-    monkeypatch.setattr(
-        "steelthread.online_evaluators.eval_runner.PortiaBackend.mark_processed",
-        lambda self, tc: None,  # noqa: ARG005
-    )
-
-    runner = OnlineEvalRunner(online_eval_config)
-    with pytest.raises(ValueError):  # noqa: PT011
-        runner.run()
-
     dummy_test_case = OnlineTestCase(
         id="", related_item_type="plan_run", related_item_id=str(uuid4())
     )
@@ -206,11 +183,15 @@ def test_run_with_wrong_types(
     )
 
     runner = OnlineEvalRunner(online_eval_config)
+
+    dummy_test_case = OnlineTestCase(
+        id="", related_item_type="plan_run", related_item_id=str(uuid4())
+    )
     with pytest.raises(ValueError):  # noqa: PT011
-        runner.run()
+        runner._evaluate(runner.config.evaluators[0], dummy_test_case, MagicMock(), None)
 
     dummy_test_case = OnlineTestCase(
         id="", related_item_type="other_item", related_item_id=str(uuid4())
     )
     with pytest.raises(ValueError):  # noqa: PT011
-        runner._evaluate(runner.config.evaluators[0], dummy_test_case, MagicMock())
+        runner._evaluate(runner.config.evaluators[0], dummy_test_case, MagicMock(), MagicMock())

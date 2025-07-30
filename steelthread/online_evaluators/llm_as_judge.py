@@ -58,17 +58,21 @@ class LLMJudgeOnlineEvaluator(OnlineEvaluator):
             ],
         )
 
-    def eval_plan_run(self, plan_run: PlanRun) -> list[Metric]:
+    def eval_plan_run(self, plan: Plan, plan_run: PlanRun) -> list[Metric]:
         """Evaluate a PlanRun (executed plan) using LLM-based scoring.
 
         Args:
+            plan (Plan): The linked plan.
             plan_run (PlanRun): The executed plan run to evaluate.
 
         Returns:
             list[Metric]: A list of performance metrics scored by the LLM.
 
         """
-        task_data = plan_run.model_dump_json()
+        task_data = f"""
+         plan: {plan.model_dump_json()}
+         plan_run: {plan_run.model_dump_json()}
+        """
         return self.scorer.score(
             task_data=[task_data],
             metrics_to_score=[

@@ -1,34 +1,8 @@
 """LLM judge for metrics."""
 
 from portia import Config, Message
-from portia.logger import logger
-from pydantic import BaseModel
 
-from steelthread.metrics.metric import Metric
-
-
-class MetricWithExplanation(BaseModel):
-    """Metric with explanation. Useful for debugging metric scores.
-
-    Attributes:
-        metric (Metric): The evaluated metric with its score.
-        explanation (str): Explanation of how the score was derived.
-
-    """
-
-    metric: Metric
-    explanation: str
-
-
-class MetricWithExplanationList(BaseModel):
-    """List of metrics with explanation.
-
-    Attributes:
-        metrics (list[MetricWithExplanation]): A list of scored metrics with explanations.
-
-    """
-
-    metrics: list[MetricWithExplanation]
+from steelthread.metrics.metric import Metric, MetricList
 
 
 class LLMMetricScorer:
@@ -43,7 +17,7 @@ class LLMMetricScorer:
         config: Config,
         base_prompt: str = """You are an expert reviewer charged with evaluating agentic executions.
         For each metric provided please provide a score between 0 and 1 based on the data and task
-        provided. Also include an explanation as to why you score it this way.""",
+        provided. IMPORTANT - Also include an explanation as to why you score it this way.""",
     ) -> None:
         """Initialize the LLMMetricScorer.
 
@@ -88,14 +62,11 @@ class LLMMetricScorer:
         ]
 
         metrics = (
-            self.config.get_default_model()
-            .get_structured_response(messages, MetricWithExplanationList)
-            .metrics
+            self.config.get_default_model().get_structured_response(messages, MetricList).metrics
         )
         [
-            logger().debug(
-                f"{metric.metric.name}:{metric.metric.score} explanation: {metric.explanation}"
-            )
+            print(f"[LLM Judge] {metric.name}:{metric.score} explanation: {metric.explanation}")  # noqa: T201
             for metric in metrics
         ]
-        return [metric.metric for metric in metrics]
+
+        return metrics
