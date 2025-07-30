@@ -4,7 +4,7 @@ from typing import Literal
 from unittest.mock import MagicMock, patch
 
 import pytest
-from portia import PlanRun, PlanRunState
+from portia import Plan, PlanRun, PlanRunState
 from portia.tool_call import ToolCallRecord as ToolCall
 from portia.tool_call import ToolCallStatus
 
@@ -69,10 +69,11 @@ def test_output_score_calculator_invalid() -> None:
 
 def test_unknown_assertion_match() -> None:
     """Check unknown assertion."""
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
     plan_run.state = PlanRunState.COMPLETE
     evaluator = AssertionEvaluator(
         config=get_test_config(),
+        plan=plan,
         plan_run=plan_run,
         metadata=PlanRunMetadata(tool_calls=[], latency_ms=10),
     )
@@ -84,10 +85,11 @@ def test_unknown_assertion_match() -> None:
 
 def test_custom_assertion_match() -> None:
     """Check custom assertion."""
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
     plan_run.state = PlanRunState.COMPLETE
     evaluator = AssertionEvaluator(
         config=get_test_config(),
+        plan=plan,
         plan_run=plan_run,
         metadata=PlanRunMetadata(tool_calls=[], latency_ms=10),
     )
@@ -98,10 +100,11 @@ def test_custom_assertion_match() -> None:
 
 def test_outcome_assertion_match() -> None:
     """Check outcome match."""
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
     plan_run.state = PlanRunState.COMPLETE
     evaluator = AssertionEvaluator(
         config=get_test_config(),
+        plan=plan,
         plan_run=plan_run,
         metadata=PlanRunMetadata(tool_calls=[], latency_ms=10),
     )
@@ -111,10 +114,11 @@ def test_outcome_assertion_match() -> None:
 
 def test_outcome_assertion_mismatch() -> None:
     """Check outcome mismatch."""
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
     plan_run.state = PlanRunState.COMPLETE
     evaluator = AssertionEvaluator(
         config=get_test_config(),
+        plan=plan,
         plan_run=plan_run,
         metadata=PlanRunMetadata(tool_calls=[], latency_ms=10),
     )
@@ -124,9 +128,10 @@ def test_outcome_assertion_mismatch() -> None:
 
 def test_latency_assertion() -> None:
     """Check Latency assertion."""
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
     evaluator = AssertionEvaluator(
         config=get_test_config(),
+        plan=plan,
         plan_run=plan_run,
         metadata=PlanRunMetadata(tool_calls=[], latency_ms=9000),
     )
@@ -136,6 +141,7 @@ def test_latency_assertion() -> None:
 
     evaluator = AssertionEvaluator(
         config=get_test_config(),
+        plan=plan,
         plan_run=plan_run,
         metadata=PlanRunMetadata(tool_calls=[], latency_ms=12000),
     )
@@ -146,9 +152,10 @@ def test_latency_assertion() -> None:
 
 def test_tool_calls_assertion() -> None:
     """Test tool call match."""
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
     evaluator = AssertionEvaluator(
         config=get_test_config(),
+        plan=plan,
         plan_run=plan_run,
         metadata=PlanRunMetadata(
             tool_calls=[
@@ -179,9 +186,10 @@ def test_tool_calls_assertion() -> None:
 
 def test_tool_calls_assertion_unexpected() -> None:
     """Test tool call unexpected."""
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
     evaluator = AssertionEvaluator(
         config=get_test_config(),
+        plan=plan,
         plan_run=plan_run,
         metadata=PlanRunMetadata(
             tool_calls=[
@@ -212,9 +220,10 @@ def test_tool_calls_assertion_unexpected() -> None:
 
 def test_tool_calls_assertion_mismatch() -> None:
     """Test tool call mismatch."""
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
     evaluator = AssertionEvaluator(
         config=get_test_config(),
+        plan=plan,
         plan_run=plan_run,
         metadata=PlanRunMetadata(tool_calls=[], latency_ms=9000),
     )
@@ -234,12 +243,15 @@ def test_final_output_assertion_llm_judge() -> None:
     scorer_mock = MagicMock()
     scorer_mock.score.return_value = [Metric(score=0.5, name="final_output", description="desc")]
 
+    plan, _ = get_test_plan_run()
+
     plan_run = MagicMock()
     plan_run.model_dump_json.return_value = "{}"
 
     with patch.object(LLMMetricScorer, "score", scorer_mock.score):
         evaluator = AssertionEvaluator(
             config=get_test_config(),
+            plan=plan,
             plan_run=plan_run,
             metadata=PlanRunMetadata(latency_ms=10000, tool_calls=[]),
         )
@@ -258,7 +270,7 @@ def test_default_offline_evaluator_integration() -> None:
     final_output = MagicMock()
     final_output.get_value.return_value = "foo"
 
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
     metadata = PlanRunMetadata(latency_ms=10000, tool_calls=[])
 
     test_case = OfflineTestCase(
@@ -273,7 +285,7 @@ def test_default_offline_evaluator_integration() -> None:
     )
 
     evaluator = DefaultOfflineEvaluator(config=get_test_config())
-    metrics = evaluator.eval_test_case(test_case, plan_run, metadata)
+    metrics = evaluator.eval_test_case(test_case, plan, plan_run, metadata)
 
     assert isinstance(metrics, list)
     assert all(isinstance(m, Metric) for m in metrics)
@@ -287,13 +299,14 @@ def test_eval_base_class() -> None:
         def eval_test_case(
             self,
             test_case: OfflineTestCase,
+            final_plan: Plan,
             final_plan_run: PlanRun,
             additional_data: PlanRunMetadata,
         ) -> list[Metric] | Metric | None:
-            return super().eval_test_case(test_case, final_plan_run, additional_data)
+            return super().eval_test_case(test_case, final_plan, final_plan_run, additional_data)
 
     evaluator = MyEvaluator(get_test_config())
-    _, plan_run = get_test_plan_run()
+    plan, plan_run = get_test_plan_run()
 
     metadata = PlanRunMetadata(latency_ms=10000, tool_calls=[])
 
@@ -308,6 +321,6 @@ def test_eval_base_class() -> None:
         ],
     )
 
-    metrics = evaluator.eval_test_case(test_case, plan_run, metadata)
+    metrics = evaluator.eval_test_case(test_case, plan, plan_run, metadata)
     assert isinstance(metrics, list)
     assert len(metrics) == 0

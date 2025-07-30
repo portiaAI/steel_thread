@@ -3,7 +3,7 @@
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from portia import Config, PlanRun, Portia
+from portia import Config, Plan, PlanRun, Portia
 from portia.prefixed_uuid import PlanUUID
 from portia.storage import PLAN_UUID_PREFIX
 
@@ -103,14 +103,15 @@ class OfflineEvalRunner:
         portia.storage = ReadOnlyStorage(portia.storage)  # type: ignore  # noqa: PGH003
 
         # Run the test case
-        output, latency = self._run_test_case(tc)
+        plan, plan_run, latency = self._run_test_case(tc)
 
         # Evaluate with isolated evaluator instances
         all_metrics = []
         for evaluator in self.config.evaluators:
             metrics = evaluator.eval_test_case(
                 tc,
-                output,
+                plan,
+                plan_run,
                 PlanRunMetadata(
                     latency_ms=latency,
                     tool_calls=tool_registry.get_tool_calls(),
@@ -158,7 +159,7 @@ class OfflineEvalRunner:
             for backend in self.config.metrics_backends:
                 backend.save_metrics(eval_run, all_metrics)
 
-    def _run_test_case(self, tc: OfflineTestCase) -> tuple[PlanRun, float]:
+    def _run_test_case(self, tc: OfflineTestCase) -> tuple[Plan, PlanRun, float]:
         """Execute a single test case and record latency.
 
         Args:
@@ -170,12 +171,14 @@ class OfflineEvalRunner:
         """
         start = time.perf_counter()
         if tc.input_config.type == "query":
-            output = self.portia.run(tc.input_config.value, tools=tc.input_config.tools)
+            plan = self.portia.plan(tc.input_config.value, tools=tc.input_config.tools)
+            output = self.portia.run_plan(plan)
         elif tc.input_config.type == "plan_id":
-            output = self.portia.run_plan(
+            plan = self.portia.storage.get_plan(
                 PlanUUID.from_string(f"{PLAN_UUID_PREFIX}-{tc.input_config.value}")
             )
+            output = self.portia.run_plan(plan)
         else:
             raise ValueError(f"invalid input_config type: {tc.input_config.type}")
         end = time.perf_counter()
-        return output, (end - start) * 1000
+        return plan, output, (end - start) * 1000

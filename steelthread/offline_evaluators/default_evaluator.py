@@ -1,6 +1,6 @@
 """Online LLM as Judge implementation."""
 
-from portia import Config, Output
+from portia import Config, Output, Plan
 from portia.plan_run import PlanRun
 
 from steelthread.common.llm import LLMMetricScorer
@@ -46,16 +46,20 @@ class OutputScoreCalculator:
 class AssertionEvaluator:
     """Evaluate assertions defined in test cases against a PlanRun."""
 
-    def __init__(self, config: Config, plan_run: PlanRun, metadata: PlanRunMetadata) -> None:
+    def __init__(
+        self, config: Config, plan: Plan, plan_run: PlanRun, metadata: PlanRunMetadata
+    ) -> None:
         """Initialize the evaluator with Portia config and run data.
 
         Args:
             config (Config): Portia config for model access or scoring.
+            plan (Plan): The linked plan.
             plan_run (PlanRun): The plan run to evaluate.
             metadata (PlanRunMetadata): Additional data about the run (e.g., latency, tool calls).
 
         """
         self.config = config
+        self.plan = plan
         self.plan_run = plan_run
         self.metadata = metadata
 
@@ -148,6 +152,7 @@ class DefaultOfflineEvaluator(OfflineEvaluator):
     def eval_test_case(
         self,
         test_case: OfflineTestCase,
+        final_plan: Plan,
         final_plan_run: PlanRun,
         additional_data: PlanRunMetadata,
     ) -> list[Metric] | None:
@@ -155,6 +160,7 @@ class DefaultOfflineEvaluator(OfflineEvaluator):
 
         Args:
             test_case (OfflineTestCase): The test case to evaluate.
+            final_plan (Plan): The executed plan to evaluate.
             final_plan_run (PlanRun): The executed plan run to evaluate.
             additional_data (PlanRunMetadata): Additional context like latency, tool usage.
 
@@ -162,7 +168,7 @@ class DefaultOfflineEvaluator(OfflineEvaluator):
             list[Metric] | None: A list of metrics derived from assertions, or None if none.
 
         """
-        evaluator = AssertionEvaluator(self.config, final_plan_run, additional_data)
+        evaluator = AssertionEvaluator(self.config, final_plan, final_plan_run, additional_data)
         all_metrics = []
         for assertion in test_case.assertions:
             all_metrics.extend(evaluator.evaluate(assertion))

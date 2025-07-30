@@ -73,7 +73,7 @@ from steelthread.offline_evaluators.evaluator import OfflineEvaluator
 from steelthread.metrics.metric import Metric
 
 class EmojiEvaluator(OfflineEvaluator):
-    def eval_test_case(self, test_case, final_plan_run, additional_data):
+    def eval_test_case(self, test_case, final_plan, final_plan_run, additional_data):
         output = final_plan_run.outputs.final_output.get_value() or ""
         count = output.count("😊")
         score = min(count / 2, 1.0)
@@ -145,7 +145,7 @@ def weather_stub_response(i, ctx, args, kwargs):
 
 # Custom evaluator
 class EmojiEvaluator(OfflineEvaluator):
-    def eval_test_case(self, test_case, plan_run, metadata):
+    def eval_test_case(self, test_case,plan, plan_run, metadata):
         out = plan_run.outputs.final_output.get_value() or ""
         count = out.count("🌞")
         return Metric(score=min(count / 2, 1.0), name="emoji_score", description="Emoji usage")

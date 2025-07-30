@@ -2,7 +2,7 @@
 
 import re
 
-from portia import Config, DefaultToolRegistry, LogLevel, Portia, ToolRunContext
+from portia import Config, DefaultToolRegistry, LogLevel, Plan, Portia, ToolRunContext
 from portia.plan_run import PlanRun
 
 from steelthread.metrics.metric import Metric
@@ -43,6 +43,7 @@ class EmojiEvaluator(OfflineEvaluator):
     def eval_test_case(
         self,
         test_case: OfflineTestCase,
+        final_plan: Plan,  # noqa: ARG002
         final_plan_run: PlanRun,
         additional_data: PlanRunMetadata,  # noqa: ARG002
     ) -> list[Metric] | Metric | None:

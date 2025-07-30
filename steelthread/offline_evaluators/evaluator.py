@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from portia import Config, PlanRun
+from portia import Config, Plan, PlanRun
 from portia.storage import ToolCallRecord
 from pydantic import BaseModel
 
@@ -48,6 +48,7 @@ class OfflineEvaluator(ABC):
     def eval_test_case(
         self,
         test_case: OfflineTestCase,
+        final_plan: Plan,
         final_plan_run: PlanRun,
         additional_data: PlanRunMetadata,
     ) -> list[Metric] | Metric | None:
@@ -55,6 +56,7 @@ class OfflineEvaluator(ABC):
 
         Args:
             test_case (OfflineTestCase): The test case defining expected behavior/assertions.
+            final_plan (Plan): The plan to evaluate.
             final_plan_run (PlanRun): The plan run output to evaluate.
             additional_data (PlanRunMetadata): Metadata like latency and tool call history.
 

@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from portia import PlanRun
+from portia import Plan, PlanRun
 from pydantic import SecretStr
 
 from steelthread.common.models import EvalRun
@@ -22,6 +22,7 @@ class DummyEvaluator(OfflineEvaluator):
     def eval_test_case(
         self,
         test_case: OfflineTestCase,  # noqa: ARG002
+        final_plan: Plan,  # noqa: ARG002
         final_plan_run: PlanRun,  # noqa: ARG002
         additional_data: PlanRunMetadata,  # noqa: ARG002
     ) -> list[Metric] | Metric | None:
