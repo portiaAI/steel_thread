@@ -39,7 +39,6 @@ class OnlineEvalConfig:
         self,
         data_set_name: str,
         config: Config,
-        iterations: int | None = None,
         evaluators: list[OnlineEvaluator] | None = None,
         additional_tags: dict[str, str] | None = None,
         metrics_backends: list[MetricsBackend] | None = None,
@@ -50,7 +49,6 @@ class OnlineEvalConfig:
         Args:
             data_set_name (str): Dataset to evaluate.
             config (Config): Portia config (must include API key).
-            iterations (int | None): Number of times to run each test case.
             evaluators (list[OnlineEvaluator] | None): Evaluators to apply.
             additional_tags (dict[str, str] | None): Extra tags to add to each metric.
             metrics_backends (list[MetricsBackend] | None): Metric writers.
@@ -60,7 +58,6 @@ class OnlineEvalConfig:
         config.must_get_api_key("portia_api_key")
         self.data_set_name = data_set_name
         self.portia_config = config
-        self.iterations = iterations or 3
         self.evaluators = evaluators or [LLMJudgeOnlineEvaluator(config)]
         self.additional_tags = additional_tags or {}
         self.metrics_backends = metrics_backends or [LogMetricBackend()]
@@ -113,18 +110,17 @@ class OnlineEvalRunner:
             return []
 
         metrics_out = []
-        for _ in range(self.config.iterations):
-            for evaluator in self.config.evaluators:
-                metrics = self._evaluate(evaluator, tc, plan, plan_run)
-                if metrics:
-                    metrics_out.extend(
-                        MetricTagger.attach_tags(
-                            self.config.portia_config,
-                            m,
-                            self.config.additional_tags,
-                        )
-                        for m in (metrics if isinstance(metrics, list) else [metrics])
+        for evaluator in self.config.evaluators:
+            metrics = self._evaluate(evaluator, tc, plan, plan_run)
+            if metrics:
+                metrics_out.extend(
+                    MetricTagger.attach_tags(
+                        self.config.portia_config,
+                        m,
+                        self.config.additional_tags,
                     )
+                    for m in (metrics if isinstance(metrics, list) else [metrics])
+                )
         self.backend.mark_processed(tc)
         return metrics_out
 

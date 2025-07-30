@@ -47,7 +47,6 @@ def online_eval_config() -> OnlineEvalConfig:
     return OnlineEvalConfig(
         data_set_name="test-dataset",
         config=config,
-        iterations=1,
         evaluators=[DummyEvaluator(config)],
         additional_tags={"env": "test"},
         metrics_backends=[RecordingMetricsBackend()],
