@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from steelthread.common.models import EvalRun
-from steelthread.metrics.metric import (
+from steelthread.utils.models import EvalRun
+from steelthread.tags.offline_metric import (
     LogMetricBackend,
     Metric,
     MetricsBackend,
@@ -24,7 +24,7 @@ def test_log_metric_backend_saves_metrics(capfd: pytest.CaptureFixture[str]) -> 
         MetricWithTag(name="clarity", description="", score=0.95, tags={"task": "B", "phase": "2"}),
     ]
 
-    backend.save_metrics(EvalRun(data_set_name="", data_set_type=""), metrics)
+    backend.save_metrics(EvalRun(eval_set_name="", eval_set_type=""), metrics)
 
     out, _ = capfd.readouterr()
 
@@ -54,7 +54,7 @@ def test_metric_base_classes() -> None:
     ]
 
     with pytest.raises(NotImplementedError):
-        backend.save_metrics(EvalRun(data_set_name="", data_set_type=""), metrics)
+        backend.save_metrics(EvalRun(eval_set_name="", eval_set_type=""), metrics)
 
 
 def test_attach_tags() -> None:

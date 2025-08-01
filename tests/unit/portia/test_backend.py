@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from httpx import Response
 
-from steelthread.offline_evaluators.test_case import OfflineTestCase
-from steelthread.online_evaluators.test_case import OnlineTestCase
-from steelthread.portia.backend import PortiaBackend
+from steelthread.evals.models import OfflineTestCase
+from steelthread.streams.stream_item import OnlineTestCase
+from steelthread.streams.backend import PortiaBackend
 from tests.unit.utils import get_test_config
 
 

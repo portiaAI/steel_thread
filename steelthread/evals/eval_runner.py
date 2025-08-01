@@ -2,31 +2,32 @@
 
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from uuid import uuid4
 
 from portia import Config, Plan, PlanRun, Portia
 from portia.prefixed_uuid import PlanUUID
 from portia.storage import PLAN_UUID_PREFIX
 
-from steelthread.common.models import EvalRun
-from steelthread.metrics.metric import (
-    LogMetricBackend,
-    Metric,
+from steelthread.evals.backend import PortiaBackend
+from steelthread.evals.default_evaluator import DefaultEvaluator
+from steelthread.evals.evaluator import Evaluator, PlanRunMetadata
+from steelthread.evals.metrics import (
+    EvalLogMetricBackend,
+    EvalMetric,
     MetricsBackend,
-    MetricTagger,
+    PortiaEvalMetricsBackend,
 )
-from steelthread.offline_evaluators.default_evaluator import DefaultOfflineEvaluator
-from steelthread.offline_evaluators.evaluator import OfflineEvaluator, PlanRunMetadata
-from steelthread.offline_evaluators.test_case import OfflineTestCase
-from steelthread.portia.backend import PortiaBackend
+from steelthread.evals.models import EvalTestCase
+from steelthread.evals.tags import EvalMetricTagger
 from steelthread.portia.storage import ReadOnlyStorage
 from steelthread.portia.tools import ToolStubRegistry
 
 
-class OfflineEvalConfig:
+class EvalConfig:
     """Configuration for running offline evaluations.
 
     Attributes:
-        data_set_name (str): The name of the test dataset to evaluate.
+        eval_dataset_name (str): The name of the test eval set to evaluate.
         portia_config (Config): Portia configuration object.
         iterations (int): Number of times each test case should be run (defaults to 3).
         evaluators (list[OfflineEvaluator]): List of evaluators to apply to each run.
@@ -38,10 +39,10 @@ class OfflineEvalConfig:
 
     def __init__(
         self,
-        data_set_name: str,
+        eval_dataset_name: str,
         config: Config,
         iterations: int | None = None,
-        evaluators: list[OfflineEvaluator] | None = None,
+        evaluators: list[Evaluator] | None = None,
         additional_tags: dict[str, str] | None = None,
         metrics_backends: list[MetricsBackend] | None = None,
         max_concurrency: int | None = None,
@@ -49,7 +50,7 @@ class OfflineEvalConfig:
         """Initialize OfflineEvalConfig.
 
         Args:
-            data_set_name (str): Name of the dataset to evaluate.
+            eval_dataset_name (str): Name of the eval set to evaluate.
             config (Config): Portia config with API key.
             iterations (int | None): How many times to run each test case.
             evaluators (list[OfflineEvaluator] | None): Evaluators to use (defaults to built-in).
@@ -59,19 +60,22 @@ class OfflineEvalConfig:
 
         """
         config.must_get_api_key("portia_api_key")
-        self.data_set_name = data_set_name
+        self.eval_dataset_name = eval_dataset_name
         self.portia_config = config
         self.iterations = iterations or 3
-        self.evaluators = evaluators or [DefaultOfflineEvaluator(config)]
+        self.evaluators = evaluators or [DefaultEvaluator(config)]
         self.additional_tags = additional_tags or {}
-        self.metrics_backends = metrics_backends or [LogMetricBackend()]
+        self.metrics_backends = metrics_backends or [
+            EvalLogMetricBackend(),
+            PortiaEvalMetricsBackend(config),
+        ]
         self.max_concurrency = max_concurrency or 5
 
 
-class OfflineEvalRunner:
+class EvalRunner:
     """Runner for executing and scoring offline evaluations."""
 
-    def __init__(self, portia: Portia, config: OfflineEvalConfig) -> None:
+    def __init__(self, portia: Portia, config: EvalConfig) -> None:
         """Initialize the runner.
 
         Wraps the tool registry for stubbing and enforces read-only plan storage.
@@ -93,7 +97,7 @@ class OfflineEvalRunner:
         portia.tool_registry = self.tool_registry
         portia.storage = ReadOnlyStorage(portia.storage)  # type: ignore  # noqa: PGH003
 
-    def _evaluate_and_collect_metrics(self, tc: OfflineTestCase) -> list[Metric]:
+    def _evaluate_and_collect_metrics(self, tc: EvalTestCase) -> list[EvalMetric]:
         """Run a single test case with isolated tool registry and evaluators."""
         inner_registry = self.portia.tool_registry
         tool_registry = ToolStubRegistry(inner_registry, stubs={})
@@ -119,12 +123,14 @@ class OfflineEvalRunner:
             )
             if metrics:
                 all_metrics.extend(
-                    [
-                        MetricTagger.attach_tags(
-                            self.config.portia_config, m, self.config.additional_tags
-                        )
-                        for m in (metrics if isinstance(metrics, list) else [metrics])
-                    ]
+                    EvalMetricTagger.attach_tags_to_test_case(
+                        metrics,
+                        tc,
+                        plan,
+                        plan_run,
+                        self.config.portia_config,
+                        self.config.additional_tags,
+                    )
                 )
         return all_metrics
 
@@ -137,8 +143,8 @@ class OfflineEvalRunner:
         - Saves metrics using configured backends.
 
         """
-        eval_run = EvalRun(data_set_name=self.config.data_set_name, data_set_type="offline")
-        test_cases = self.backend.load_offline_evals(self.config.data_set_name)
+        run_id = str(uuid4())
+        test_cases = self.backend.load_offline_evals(self.config.eval_dataset_name, run_id)
         all_metrics = []
 
         futures = []
@@ -157,9 +163,9 @@ class OfflineEvalRunner:
 
         if len(all_metrics) > 0:
             for backend in self.config.metrics_backends:
-                backend.save_metrics(eval_run, all_metrics)
+                backend.save_eval_metrics(all_metrics)
 
-    def _run_test_case(self, tc: OfflineTestCase) -> tuple[Plan, PlanRun, float]:
+    def _run_test_case(self, tc: EvalTestCase) -> tuple[Plan, PlanRun, float]:
         """Execute a single test case and record latency.
 
         Args:

@@ -50,14 +50,14 @@ runner = SteelThread()
 
 # Online evals
 runner.run_online(
-    OnlineEvalConfig(data_set_name="online_evals", config=config)
+    OnlineEvalConfig(eval_set_name="online_evals", config=config)
 )
 
 # Offline evals
 portia = Portia(config)
 runner.run_offline(
     portia,
-    OfflineEvalConfig(data_set_name="offline_evals_v1", config=config, iterations=4)
+    OfflineEvalConfig(eval_set_name="offline_evals_v1", config=config, iterations=4)
 )
 ```
 
@@ -161,7 +161,7 @@ portia = Portia(
 runner.run_offline(
     portia,
     OfflineEvalConfig(
-        data_set_name="offline_evals_v1",
+        eval_set_name="offline_evals_v1",
         config=config,
         iterations=1,
         evaluators=[DefaultOfflineEvaluator(config), EmojiEvaluator(config)],

@@ -8,11 +8,12 @@ from _pytest.monkeypatch import MonkeyPatch
 from portia import Plan, PlanRun
 from pydantic import SecretStr
 
-from steelthread.common.models import EvalRun
-from steelthread.metrics.metric import Metric, MetricsBackend, MetricWithTag
-from steelthread.online_evaluators.eval_runner import OnlineEvalConfig, OnlineEvalRunner
-from steelthread.online_evaluators.evaluator import OnlineEvaluator
-from steelthread.online_evaluators.test_case import OnlineTestCase
+from steelthread.utils.models import EvalRun
+from steelthread.evals.metrics import MetricsBackend
+from steelthread.tags.offline_metric import Metric, MetricWithTag
+from steelthread.streams.stream_processor import OnlineEvalConfig, OnlineEvalRunner
+from steelthread.streams.evaluator import OnlineEvaluator
+from steelthread.streams.stream_item import OnlineTestCase
 from tests.unit.utils import get_test_config, get_test_plan_run
 
 
@@ -45,7 +46,7 @@ def online_eval_config() -> OnlineEvalConfig:
     """Return config."""
     config = get_test_config(portia_api_key=SecretStr("123"))
     return OnlineEvalConfig(
-        data_set_name="test-dataset",
+        eval_set_name="test-dataset",
         config=config,
         evaluators=[DummyEvaluator(config)],
         additional_tags={"env": "test"},

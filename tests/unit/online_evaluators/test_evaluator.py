@@ -2,8 +2,8 @@
 
 from portia import Plan, PlanRun
 
-from steelthread.metrics.metric import Metric
-from steelthread.online_evaluators.evaluator import OnlineEvaluator
+from steelthread.tags.offline_metric import Metric
+from steelthread.streams.evaluator import OnlineEvaluator
 from tests.unit.utils import get_test_config, get_test_plan_run
 
 

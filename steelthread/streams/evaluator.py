@@ -2,12 +2,13 @@
 
 from abc import ABC, abstractmethod
 
-from portia import Config, Plan, PlanRun
+from portia import Config
 
-from steelthread.metrics.metric import Metric
+from steelthread.streams.metrics import StreamMetric
+from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
 
 
-class OnlineEvaluator(ABC):
+class StreamEvaluator(ABC):
     """Abstract base class for implementing online evaluation logic.
 
     Subclasses must define logic to evaluate either a plan or a plan run,
@@ -29,28 +30,33 @@ class OnlineEvaluator(ABC):
         self.config = config
 
     @abstractmethod
-    def eval_plan(self, plan: Plan) -> list[Metric] | Metric:
-        """Evaluate a static Plan definition.
+    def process_plan(
+        self,
+        stream_item: PlanStreamItem,
+    ) -> list[StreamMetric] | StreamMetric | None:
+        """Process a Plan stream item.
 
         Args:
-            plan (Plan): The Plan to evaluate (no runtime data).
+            stream_item (PlanStreamItem): The Plan to evaluate.
 
         Returns:
-            list[Metric] | Metric: Metric(s) resulting from evaluation.
+            list[StreamMetric] | StreamMetric: Metric(s) resulting from evaluation.
 
         """
         return []
 
     @abstractmethod
-    def eval_plan_run(self, plan: Plan, plan_run: PlanRun) -> list[Metric] | Metric | None:
-        """Evaluate a completed PlanRun (runtime output available).
+    def process_plan_run(
+        self,
+        stream_item: PlanRunStreamItem,
+    ) -> list[StreamMetric] | StreamMetric | None:
+        """Process a PlanRunStream item.
 
         Args:
-            plan (Plan): The Plan the PlanRun is linked to.
-            plan_run (PlanRun): The executed PlanRun object to evaluate.
+            stream_item (PlanRunStreamItem): The item to evaluate
 
         Returns:
-            list[Metric] | Metric | None: Metric(s) or None if not applicable.
+            list[StreamMetric] | StreamMetric | None: Metric(s) or None if not applicable.
 
         """
         return []

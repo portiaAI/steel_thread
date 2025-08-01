@@ -6,8 +6,8 @@ from portia import Config, Plan, PlanRun
 from portia.storage import ToolCallRecord
 from pydantic import BaseModel
 
-from steelthread.metrics.metric import Metric
-from steelthread.offline_evaluators.test_case import OfflineTestCase
+from steelthread.evals.metrics import EvalMetric
+from steelthread.evals.models import EvalTestCase
 
 
 class PlanRunMetadata(BaseModel):
@@ -23,11 +23,11 @@ class PlanRunMetadata(BaseModel):
     latency_ms: float
 
 
-class OfflineEvaluator(ABC):
+class Evaluator(ABC):
     """Abstract base class for implementing offline evaluation logic.
 
     Subclasses should implement the `eval_test_case` method to evaluate
-    a `PlanRun` against an `OfflineTestCase` and return one or more metrics.
+    a `PlanRun` against an `EvalTestCase` and return one or more EvalMetrics.
 
     Attributes:
         config (Config): Portia configuration instance for access to model or tooling info.
@@ -47,21 +47,21 @@ class OfflineEvaluator(ABC):
     @abstractmethod
     def eval_test_case(
         self,
-        test_case: OfflineTestCase,
+        test_case: EvalTestCase,
         final_plan: Plan,
         final_plan_run: PlanRun,
         additional_data: PlanRunMetadata,
-    ) -> list[Metric] | Metric | None:
+    ) -> list[EvalMetric] | EvalMetric | None:
         """Evaluate a test case given its plan run result and metadata.
 
         Args:
-            test_case (OfflineTestCase): The test case defining expected behavior/assertions.
+            test_case (EvalTestCase): The test case defining expected behavior/assertions.
             final_plan (Plan): The plan to evaluate.
             final_plan_run (PlanRun): The plan run output to evaluate.
             additional_data (PlanRunMetadata): Metadata like latency and tool call history.
 
         Returns:
-            list[Metric] | Metric | None: One or more metrics representing evaluation results.
+            list[EvalMetric] | EvalMetric | None: One or more EvalMetrics representing evaluation results.
 
         """
         return []

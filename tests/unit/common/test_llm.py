@@ -5,10 +5,10 @@ from typing import TypeVar
 from portia import Config, LLMProvider, Message
 from pydantic import BaseModel, SecretStr
 
-from steelthread.common.llm import (
+from steelthread.utils.llm import (
     LLMMetricScorer,
 )
-from steelthread.metrics.metric import Metric, MetricList
+from steelthread.tags.offline_metric import Metric, MetricList
 
 BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
 

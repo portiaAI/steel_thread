@@ -1,14 +1,14 @@
 """Online LLM as Judge implementation."""
 
-from portia import Config, Plan
-from portia.plan_run import PlanRun
+from portia import Config
 
-from steelthread.common.llm import LLMMetricScorer
-from steelthread.metrics.metric import Metric
-from steelthread.online_evaluators.evaluator import OnlineEvaluator
+from steelthread.streams.evaluator import StreamEvaluator
+from steelthread.streams.metrics import StreamMetric
+from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
+from steelthread.utils.llm import LLMMetricScorer, MetricOnly
 
 
-class LLMJudgeOnlineEvaluator(OnlineEvaluator):
+class LLMJudgeOnlineEvaluator(StreamEvaluator):
     """Online evaluator that uses an LLM to score Plans and PlanRuns.
 
     This evaluator uses an LLM-as-Judge approach to assign scores to logical
@@ -26,31 +26,31 @@ class LLMJudgeOnlineEvaluator(OnlineEvaluator):
         self.config = config
         self.scorer = LLMMetricScorer(config)
 
-    def eval_plan(self, plan: Plan) -> list[Metric]:
+    def process_plan(self, stream_item: PlanStreamItem) -> list[StreamMetric]:
         """Evaluate a Plan (not executed) using LLM-based scoring.
 
         Args:
-            plan (Plan): The Plan to evaluate, including its structure and logic.
+            stream_item (PlanStreamItem): The Plan to evaluate.
 
         Returns:
             list[Metric]: A list of metrics scored by the LLM.
 
         """
-        task_data = plan.model_dump_json()
-        return self.scorer.score(
+        task_data = stream_item.plan.model_dump_json()
+        metrics = self.scorer.score(
             task_data=[task_data],
             metrics_to_score=[
-                Metric(
+                MetricOnly(
                     name="correctness",
                     description="Are the steps logically sound and valid?",
                     score=0,
                 ),
-                Metric(
+                MetricOnly(
                     name="completeness",
                     description="Are all necessary steps included?",
                     score=0,
                 ),
-                Metric(
+                MetricOnly(
                     name="clearness",
                     description="Are the steps clearly explained?",
                     score=0,
@@ -58,33 +58,56 @@ class LLMJudgeOnlineEvaluator(OnlineEvaluator):
             ],
         )
 
-    def eval_plan_run(self, plan: Plan, plan_run: PlanRun) -> list[Metric]:
+        return [
+            StreamMetric(
+                stream=stream_item.stream,
+                stream_item=stream_item.stream_item,
+                score=m.score,
+                name=m.name,
+                description=m.description,
+                explanation=m.explanation,
+            )
+            for m in metrics
+        ]
+
+    def process_plan_run(self, stream_item: PlanRunStreamItem) -> list[StreamMetric]:
         """Evaluate a PlanRun (executed plan) using LLM-based scoring.
 
         Args:
-            plan (Plan): The linked plan.
-            plan_run (PlanRun): The executed plan run to evaluate.
+            stream_item (PlanRunStreamItem): The linked plan + plan_run to process.
 
         Returns:
             list[Metric]: A list of performance metrics scored by the LLM.
 
         """
         task_data = f"""
-         plan: {plan.model_dump_json()}
-         plan_run: {plan_run.model_dump_json()}
+         plan: {stream_item.plan.model_dump_json()}
+         plan_run: {stream_item.plan_run.model_dump_json()}
         """
-        return self.scorer.score(
+        metrics = self.scorer.score(
             task_data=[task_data],
             metrics_to_score=[
-                Metric(
+                MetricOnly(
                     name="success",
                     description="Did it accomplish the intended goal?",
                     score=0,
                 ),
-                Metric(
+                MetricOnly(
                     name="efficiency",
                     description="Were the steps necessary and minimal?",
                     score=0,
                 ),
             ],
         )
+
+        return [
+            StreamMetric(
+                stream=stream_item.stream,
+                stream_item=stream_item.stream_item,
+                score=m.score,
+                name=m.name,
+                description=m.description,
+                explanation=m.explanation,
+            )
+            for m in metrics
+        ]

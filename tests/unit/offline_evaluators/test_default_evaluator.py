@@ -8,15 +8,15 @@ from portia import Plan, PlanRun, PlanRunState
 from portia.tool_call import ToolCallRecord as ToolCall
 from portia.tool_call import ToolCallStatus
 
-from steelthread.common.llm import LLMMetricScorer
-from steelthread.metrics.metric import Metric
-from steelthread.offline_evaluators.default_evaluator import (
+from steelthread.utils.llm import LLMMetricScorer
+from steelthread.tags.offline_metric import Metric
+from steelthread.evals.default_evaluator import (
     AssertionEvaluator,
     DefaultOfflineEvaluator,
     OutputScoreCalculator,
 )
-from steelthread.offline_evaluators.evaluator import OfflineEvaluator, PlanRunMetadata
-from steelthread.offline_evaluators.test_case import (
+from steelthread.evals.evaluator import OfflineEvaluator, PlanRunMetadata
+from steelthread.evals.models import (
     CustomAssertion,
     FinalOutputAssertion,
     InputConfig,

@@ -111,8 +111,8 @@ Assertion = Annotated[
 ]
 
 
-class OfflineTestCase(BaseModel):
-    """Model representing an offline test case.
+class EvalTestCase(BaseModel):
+    """Model representing an  test case.
 
     Attributes:
         id (str): Unique identifier for the test case.
@@ -121,7 +121,9 @@ class OfflineTestCase(BaseModel):
 
     """
 
-    id: str
+    dataset: str
+    testcase: str
+    run: str
     input_config: InputConfig
     assertions: list[Assertion]
 

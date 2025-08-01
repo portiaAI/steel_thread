@@ -1,8 +1,41 @@
 """LLM judge for metrics."""
 
 from portia import Config, Message
+from pydantic import BaseModel, Field, field_validator
 
-from steelthread.metrics.metric import Metric, MetricList
+MIN_EXPLANATION_LENGTH = 10
+
+
+class MetricOnly(BaseModel):
+    """A single record of an observation.
+
+    Attributes:
+        score (float): The numeric value of the metric.
+        name (str): The name of the metric.
+        description (str): A human-readable description of the metric.
+
+    """
+
+    score: float
+    name: str
+    description: str
+    explanation: str | None = Field(
+        default=None, description="An optional explanation of the score."
+    )
+
+    @field_validator("explanation")
+    @classmethod
+    def explanation_min_length(cls, v: str | None) -> str | None:
+        """If an explanation is provided it must have length."""
+        if v is not None and len(v) < MIN_EXPLANATION_LENGTH:
+            raise ValueError("explanation must be at least 10 characters long")
+        return v
+
+
+class MetricOnlyList(BaseModel):
+    """A list of metrics."""
+
+    metrics: list[MetricOnly]
 
 
 class LLMMetricScorer:
@@ -32,8 +65,8 @@ class LLMMetricScorer:
     def score(
         self,
         task_data: list[str],
-        metrics_to_score: list[Metric],
-    ) -> list[Metric]:
+        metrics_to_score: list[MetricOnly],
+    ) -> list[MetricOnly]:
         """Scores the given metrics based on the task data.
 
         Constructs a prompt using the base prompt, metrics, and task data,
@@ -62,7 +95,9 @@ class LLMMetricScorer:
         ]
 
         metrics = (
-            self.config.get_default_model().get_structured_response(messages, MetricList).metrics
+            self.config.get_default_model()
+            .get_structured_response(messages, MetricOnlyList)
+            .metrics
         )
         [
             print(f"[LLM Judge] {metric.name}:{metric.score} explanation: {metric.explanation}")  # noqa: T201

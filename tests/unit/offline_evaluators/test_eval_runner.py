@@ -8,11 +8,11 @@ from _pytest.monkeypatch import MonkeyPatch
 from portia import Plan, PlanRun
 from pydantic import SecretStr
 
-from steelthread.common.models import EvalRun
-from steelthread.metrics.metric import Metric, MetricsBackend, MetricWithTag
-from steelthread.offline_evaluators.eval_runner import OfflineEvalConfig, OfflineEvalRunner
-from steelthread.offline_evaluators.evaluator import OfflineEvaluator, PlanRunMetadata
-from steelthread.offline_evaluators.test_case import InputConfig, OfflineTestCase
+from steelthread.utils.models import EvalRun
+from steelthread.tags.offline_metric import Metric, MetricsBackend, MetricWithTag
+from steelthread.evals.eval_runner import OfflineEvalConfig, OfflineEvalRunner
+from steelthread.evals.evaluator import OfflineEvaluator, PlanRunMetadata
+from steelthread.evals.models import InputConfig, OfflineTestCase
 from tests.unit.utils import get_test_config
 
 
@@ -56,7 +56,7 @@ def test_offline_eval_runner_with_mocked_portia(monkeypatch: MonkeyPatch) -> Non
     metrics_backend = RecordingMetricsBackend()
 
     eval_config = OfflineEvalConfig(
-        data_set_name="demo-dataset",
+        eval_set_name="demo-dataset",
         config=config,
         iterations=1,
         evaluators=[evaluator],
@@ -105,7 +105,7 @@ def test_offline_eval_runner_with_mocked_portia_and_plan(monkeypatch: MonkeyPatc
     metrics_backend = RecordingMetricsBackend()
 
     eval_config = OfflineEvalConfig(
-        data_set_name="demo-dataset",
+        eval_set_name="demo-dataset",
         config=config,
         iterations=1,
         evaluators=[evaluator],
@@ -154,7 +154,7 @@ def test_offline_eval_runner_invalid_input(monkeypatch: MonkeyPatch) -> None:
     metrics_backend = RecordingMetricsBackend()
 
     eval_config = OfflineEvalConfig(
-        data_set_name="demo-dataset",
+        eval_set_name="demo-dataset",
         config=config,
         iterations=1,
         evaluators=[evaluator],

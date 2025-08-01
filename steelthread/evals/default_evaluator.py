@@ -3,17 +3,17 @@
 from portia import Config, Output, Plan
 from portia.plan_run import PlanRun
 
-from steelthread.common.llm import LLMMetricScorer
-from steelthread.metrics.metric import Metric
-from steelthread.offline_evaluators.evaluator import OfflineEvaluator, PlanRunMetadata
-from steelthread.offline_evaluators.test_case import (
+from steelthread.evals.evaluator import Evaluator, PlanRunMetadata
+from steelthread.evals.metrics import EvalMetric
+from steelthread.evals.models import (
     Assertion,
+    EvalTestCase,
     FinalOutputAssertion,
     LatencyAssertion,
-    OfflineTestCase,
     OutcomeAssertion,
     ToolCallsAssertion,
 )
+from steelthread.utils.llm import LLMMetricScorer, MetricOnly
 
 
 class OutputScoreCalculator:
@@ -47,7 +47,12 @@ class AssertionEvaluator:
     """Evaluate assertions defined in test cases against a PlanRun."""
 
     def __init__(
-        self, config: Config, plan: Plan, plan_run: PlanRun, metadata: PlanRunMetadata
+        self,
+        config: Config,
+        test_case: EvalTestCase,
+        plan: Plan,
+        plan_run: PlanRun,
+        metadata: PlanRunMetadata,
     ) -> None:
         """Initialize the evaluator with Portia config and run data.
 
@@ -59,18 +64,19 @@ class AssertionEvaluator:
 
         """
         self.config = config
+        self.test_case = test_case
         self.plan = plan
         self.plan_run = plan_run
         self.metadata = metadata
 
-    def evaluate(self, assertion: Assertion) -> list[Metric]:
-        """Evaluate a single assertion and return one or more metrics.
+    def evaluate(self, assertion: Assertion) -> list[EvalMetric]:
+        """Evaluate a single assertion and return one or more EvalMetrics.
 
         Args:
             assertion (Assertion): The assertion to evaluate.
 
         Returns:
-            list[Metric]: One or more metric results.
+            list[EvalMetric]: One or more EvalMetric results.
 
         """
         match assertion.type:
@@ -87,43 +93,93 @@ class AssertionEvaluator:
             case _:
                 raise ValueError(f"Unsupported assertion type: {assertion.type}")
 
-    def _evaluate_outcome(self, assertion: OutcomeAssertion) -> Metric:
+    def _evaluate_outcome(self, assertion: OutcomeAssertion) -> EvalMetric:
         """Evaluate the final state of the plan run."""
-        score = 1 if self.plan_run.state.lower() == assertion.value.lower() else 0
-        return Metric(
-            score=score, name=assertion.type, description="Outcome matches expected value"
+        assertion_value = assertion.value.lower()
+        actual_value = self.plan_run.state.lower()
+
+        score = 1 if assertion_value == actual_value else 0
+        return EvalMetric(
+            dataset=self.test_case.dataset,
+            testcase=self.test_case.testcase,
+            run=self.test_case.run,
+            score=score,
+            name=assertion.type,
+            expectation=assertion_value,
+            actual_value=actual_value,
+            description="Whether the outcome exactly matches expected value",
         )
 
-    def _evaluate_final_output(self, assertion: FinalOutputAssertion) -> list[Metric]:
+    def _evaluate_final_output(self, assertion: FinalOutputAssertion) -> list[EvalMetric]:
         """Evaluate the final output using either string comparison or LLM-based scoring."""
+        assertion_value = assertion.value
+        actual_value = str(
+            self.plan_run.outputs.final_output.get_value()
+            if self.plan_run.outputs.final_output
+            else ""
+        )
+
         if assertion.output_type == "llm_judge":
             scorer = LLMMetricScorer(self.config)
-            return scorer.score(
+            metrics = scorer.score(
                 task_data=[
                     f"Please score based on how well the output matches {assertion.value}",
                     self.plan_run.model_dump_json(),
                 ],
                 metrics_to_score=[
-                    Metric(name=assertion.type, description="LLM-based final output score", score=0)
+                    MetricOnly(
+                        name=assertion.type,
+                        description="LLM-based final output score",
+                        score=0,
+                    )
                 ],
             )
+            return [
+                EvalMetric(
+                    dataset=self.test_case.dataset,
+                    testcase=self.test_case.testcase,
+                    run=self.test_case.run,
+                    score=m.score,
+                    name=m.name,
+                    expectation=assertion_value,
+                    actual_value=actual_value,
+                    description=m.description,
+                    explanation=m.explanation,
+                )
+                for m in metrics
+            ]
+
         score = OutputScoreCalculator.calculate(self.plan_run.outputs.final_output, assertion)
         return [
-            Metric(
+            EvalMetric(
+                dataset=self.test_case.dataset,
+                testcase=self.test_case.testcase,
+                run=self.test_case.run,
                 score=score,
                 name=assertion.type,
+                expectation=assertion_value,
+                actual_value=actual_value,
                 description="Exact or partial final output match",
             )
         ]
 
-    def _evaluate_latency(self, assertion: LatencyAssertion) -> Metric:
+    def _evaluate_latency(self, assertion: LatencyAssertion) -> EvalMetric:
         """Evaluate the latency against a threshold using normalized difference."""
         actual = self.metadata.latency_ms
         target = assertion.threshold_ms
         score = 1 - (abs(target - actual) / max(abs(target), abs(actual), 1e-8))
-        return Metric(score=score, name=assertion.type, description="Normalized latency score")
+        return EvalMetric(
+            dataset=self.test_case.dataset,
+            testcase=self.test_case.testcase,
+            run=self.test_case.run,
+            score=score,
+            name=assertion.type,
+            expectation=str(target),
+            actual_value=str(actual),
+            description="Normalized latency score",
+        )
 
-    def _evaluate_tool_calls(self, assertion: ToolCallsAssertion) -> Metric:
+    def _evaluate_tool_calls(self, assertion: ToolCallsAssertion) -> EvalMetric:
         """Evaluate whether expected tools were called (or not called)."""
         expected_calls = 0
         actual_calls = 0
@@ -143,19 +199,28 @@ class AssertionEvaluator:
         else:
             score = 0.0
 
-        return Metric(score=score, name=assertion.type, description="Tool call usage score")
+        return EvalMetric(
+            dataset=self.test_case.dataset,
+            testcase=self.test_case.testcase,
+            run=self.test_case.run,
+            score=score,
+            name=assertion.type,
+            expectation=list(assertion.calls),
+            actual_value=[tc.tool_name for tc in self.metadata.tool_calls],
+            description="Tool call usage score",
+        )
 
 
-class DefaultOfflineEvaluator(OfflineEvaluator):
+class DefaultEvaluator(Evaluator):
     """Default implementation of an offline evaluator that evaluates test case assertions."""
 
     def eval_test_case(
         self,
-        test_case: OfflineTestCase,
+        test_case: EvalTestCase,
         final_plan: Plan,
         final_plan_run: PlanRun,
         additional_data: PlanRunMetadata,
-    ) -> list[Metric] | None:
+    ) -> list[EvalMetric] | None:
         """Evaluate all assertions defined in the test case.
 
         Args:
@@ -165,10 +230,12 @@ class DefaultOfflineEvaluator(OfflineEvaluator):
             additional_data (PlanRunMetadata): Additional context like latency, tool usage.
 
         Returns:
-            list[Metric] | None: A list of metrics derived from assertions, or None if none.
+            list[EvalMetric] | None: A list of EvalMetrics derived from assertions, or None if none.
 
         """
-        evaluator = AssertionEvaluator(self.config, final_plan, final_plan_run, additional_data)
+        evaluator = AssertionEvaluator(
+            self.config, test_case, final_plan, final_plan_run, additional_data
+        )
         all_metrics = []
         for assertion in test_case.assertions:
             all_metrics.extend(evaluator.evaluate(assertion))

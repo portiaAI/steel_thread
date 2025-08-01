@@ -1,6 +1,6 @@
 """Tests for offline eval test cases."""
 
-from steelthread.offline_evaluators.test_case import (
+from steelthread.evals.models import (
     CustomAssertion,
     InputConfig,
     OfflineTestCase,

@@ -2,8 +2,8 @@
 
 from unittest.mock import MagicMock, patch
 
-from steelthread.metrics.metric import Metric
-from steelthread.online_evaluators.llm_as_judge import LLMJudgeOnlineEvaluator
+from steelthread.tags.offline_metric import Metric
+from steelthread.streams.llm_as_judge import LLMJudgeOnlineEvaluator
 from tests.unit.utils import get_test_plan_run
 
 

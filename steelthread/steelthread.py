@@ -2,28 +2,28 @@
 
 from portia import Portia
 
-from steelthread.offline_evaluators.eval_runner import OfflineEvalConfig, OfflineEvalRunner
-from steelthread.online_evaluators.eval_runner import OnlineEvalConfig, OnlineEvalRunner
+from steelthread.evals.eval_runner import EvalConfig, EvalRunner
+from steelthread.streams.stream_processor import StreamConfig, StreamProcessor
 
 
 class SteelThread:
     """Main steel thread runner.
 
-    Provides static methods to run both online and offline evaluation workflows.
+    Provides static methods to run both stream and evaluation based workflows.
     """
 
     @staticmethod
-    def run_online(config: OnlineEvalConfig) -> None:
-        """Run online evaluations using the provided configuration.
+    def process_stream(config: StreamConfig) -> None:
+        """Process stream items based on the config given.
 
         Args:
-            config (OnlineEvalConfig): Configuration for online evaluation runs.
+            config (OnlineEvalConfig): Configuration for stream processor.
 
         """
-        OnlineEvalRunner(config).run()
+        StreamProcessor(config).run()
 
     @staticmethod
-    def run_offline(portia: Portia, config: OfflineEvalConfig) -> None:
+    def run_evals(portia: Portia, config: EvalConfig) -> None:
         """Run offline evaluations using Portia and the provided configuration.
 
         Args:
@@ -31,4 +31,4 @@ class SteelThread:
             config (OfflineEvalConfig): Configuration for offline evaluation runs.
 
         """
-        OfflineEvalRunner(portia, config).run()
+        EvalRunner(portia, config).run()
