@@ -36,20 +36,20 @@ st = SteelThread()
 
 
 # Process stream
-# st.process_stream(
-#     StreamConfig(stream_name="stream_v1", config=config, additional_tags={"feeling": "neutral"})
-# )
+st.process_stream(
+    StreamConfig(stream_name="stream_v1", config=config, additional_tags={"feeling": "neutral"})
+)
 
 # Run evals
 portia = Portia(config)
-# st.run_evals(
-#     portia,
-#     EvalConfig(
-#         eval_dataset_name="evals_v1",
-#         config=config,
-#         iterations=4,
-#     ),
-# )
+st.run_evals(
+    portia,
+    EvalConfig(
+        eval_dataset_name="evals_v1",
+        config=config,
+        iterations=4,
+    ),
+)
 
 
 # Define a custom evaluator
