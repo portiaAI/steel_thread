@@ -6,7 +6,6 @@ from uuid import uuid4
 
 from portia import Config, Plan, PlanRun, Portia
 from portia.prefixed_uuid import PlanUUID
-from portia.storage import PLAN_UUID_PREFIX
 
 from steelthread.evals.backend import PortiaBackend
 from steelthread.evals.default_evaluator import DefaultEvaluator
@@ -177,9 +176,7 @@ class EvalRunner:
             )
             output = portia.run_plan(plan)
         elif tc.input_config.type == "plan_id":
-            plan = portia.storage.get_plan(
-                PlanUUID.from_string(f"{PLAN_UUID_PREFIX}-{tc.input_config.value}")
-            )
+            plan = portia.storage.get_plan(PlanUUID.from_string(tc.input_config.value))
             output = portia.run_plan(plan)
         else:
             raise ValueError(f"invalid input_config type: {tc.input_config.type}")

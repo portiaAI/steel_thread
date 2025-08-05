@@ -5,7 +5,6 @@ import re
 from portia import (
     Config,
     DefaultToolRegistry,
-    GenerativeModelsConfig,
     LogLevel,
     Plan,
     PlanRun,
@@ -32,26 +31,25 @@ from steelthread.streams.stream_processor import StreamConfig
 # Setup config + Steel Thread
 config = Config.from_default(
     default_log_level=LogLevel.CRITICAL,
-    models=GenerativeModelsConfig(default_model="google/gemini-2.0-flash"),
 )
 st = SteelThread()
 
 
 # Process stream
-st.process_stream(
-    StreamConfig(stream_name="stream_v1", config=config, additional_tags={"feeling": "neutral"})
-)
+# st.process_stream(
+#     StreamConfig(stream_name="stream_v1", config=config, additional_tags={"feeling": "neutral"})
+# )
 
 # Run evals
 portia = Portia(config)
-st.run_evals(
-    portia,
-    EvalConfig(
-        eval_dataset_name="evals_v1",
-        config=config,
-        iterations=4,
-    ),
-)
+# st.run_evals(
+#     portia,
+#     EvalConfig(
+#         eval_dataset_name="evals_v1",
+#         config=config,
+#         iterations=4,
+#     ),
+# )
 
 
 # Define a custom evaluator
