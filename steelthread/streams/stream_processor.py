@@ -131,7 +131,6 @@ class StreamProcessor:
                     StreamMetricTagger.attach_tags(
                         metrics,
                         stream_item,
-                        self.config.portia_config,
                         self.config.additional_tags,
                     )
                 )
@@ -173,10 +172,9 @@ class StreamProcessor:
                     StreamMetricTagger.attach_tags(
                         metrics,
                         stream_item,
-                        self.config.portia_config,
                         self.config.additional_tags,
                     )
                 )
 
-        # self.backend.mark_processed(stream_item)
+        self.backend.mark_processed(stream_item)
         return metrics_out

@@ -1,6 +1,5 @@
 """Backend for Portia evals."""
 
-import uuid
 
 import httpx
 from portia import (

@@ -1,4 +1,4 @@
-"""Offline eval runner for steel thread."""
+"""Eval runner for steel thread."""
 
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -85,21 +85,13 @@ class EvalRunner:
             config (OfflineEvalConfig): Offline evaluation configuration.
 
         """
-        self.portia = portia
+        self.original_portia = portia
         self.config = config
         self.backend = PortiaBackend(config=config.portia_config)
 
-        self.tool_registry = (
-            ToolStubRegistry(portia.tool_registry, stubs={})
-            if not isinstance(portia.tool_registry, ToolStubRegistry)
-            else portia.tool_registry
-        )
-        portia.tool_registry = self.tool_registry
-        portia.storage = ReadOnlyStorage(portia.storage)  # type: ignore  # noqa: PGH003
-
     def _evaluate_and_collect_metrics(self, tc: EvalTestCase) -> list[EvalMetric]:
         """Run a single test case with isolated tool registry and evaluators."""
-        inner_registry = self.portia.tool_registry
+        inner_registry = self.original_portia.tool_registry
         tool_registry = ToolStubRegistry(inner_registry, stubs={})
 
         # Patch a local Portia with the test-specific tool registry
@@ -107,7 +99,7 @@ class EvalRunner:
         portia.storage = ReadOnlyStorage(portia.storage)  # type: ignore  # noqa: PGH003
 
         # Run the test case
-        plan, plan_run, latency = self._run_test_case(tc)
+        plan, plan_run, latency = self._run_test_case(tc, portia)
 
         # Evaluate with isolated evaluator instances
         all_metrics = []
@@ -144,7 +136,7 @@ class EvalRunner:
 
         """
         run_id = str(uuid4())
-        test_cases = self.backend.load_offline_evals(self.config.eval_dataset_name, run_id)
+        test_cases = self.backend.load_evals(self.config.eval_dataset_name, run_id)
         all_metrics = []
 
         futures = []
@@ -165,11 +157,12 @@ class EvalRunner:
             for backend in self.config.metrics_backends:
                 backend.save_eval_metrics(all_metrics)
 
-    def _run_test_case(self, tc: EvalTestCase) -> tuple[Plan, PlanRun, float]:
+    def _run_test_case(self, tc: EvalTestCase, portia: Portia) -> tuple[Plan, PlanRun, float]:
         """Execute a single test case and record latency.
 
         Args:
             tc: The offline test case to run.
+            portia: The instance of portia to use.
 
         Returns:
             tuple: The plan run output and latency in milliseconds.
@@ -177,13 +170,13 @@ class EvalRunner:
         """
         start = time.perf_counter()
         if tc.input_config.type == "query":
-            plan = self.portia.plan(tc.input_config.value, tools=tc.input_config.tools)
-            output = self.portia.run_plan(plan)
+            plan = portia.plan(tc.input_config.value, tools=tc.input_config.tools)
+            output = portia.run_plan(plan)
         elif tc.input_config.type == "plan_id":
-            plan = self.portia.storage.get_plan(
+            plan = portia.storage.get_plan(
                 PlanUUID.from_string(f"{PLAN_UUID_PREFIX}-{tc.input_config.value}")
             )
-            output = self.portia.run_plan(plan)
+            output = portia.run_plan(plan)
         else:
             raise ValueError(f"invalid input_config type: {tc.input_config.type}")
         end = time.perf_counter()

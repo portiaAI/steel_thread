@@ -8,7 +8,7 @@ from portia import Clarification, ClarificationCategory, ToolRunContext
 from portia.portia import EndUser
 from portia.tool import Tool
 
-from steelthread.portia.tools import ToolStub, ToolStubRegistry
+from steelthread.portia.tools import ToolStub, ToolStubContext, ToolStubRegistry
 from tests.unit.utils import get_test_config, get_test_plan_run
 
 
@@ -28,7 +28,7 @@ def dummy_context() -> ToolRunContext:
 def test_tool_stub_with_return_callable(dummy_context: ToolRunContext) -> None:
     """Test with callable."""
 
-    def return_callable(index, ctx, args, kwargs) -> str:  # noqa: ANN001, ARG001
+    def return_callable(ctx: ToolStubContext) -> str:  # noqa: ARG001
         return "result"
 
     tool = ToolStub(
@@ -104,7 +104,7 @@ def test_tool_stub_with_child_tool_error(dummy_context: ToolRunContext) -> None:
 def test_tool_stub_failure_from_callable(dummy_context: ToolRunContext) -> None:
     """Test fail in callable."""
 
-    def failing_callable(index, ctx, args, kwargs) -> Never:  # noqa: ANN001, ARG001
+    def failing_callable(ctx: ToolStubContext) -> Never:  # noqa: ARG001
         raise RuntimeError("fail")
 
     tool = ToolStub(
@@ -138,11 +138,11 @@ def test_tool_stub_fails_without_child_or_callable(dummy_context: MagicMock) -> 
 def test_tool_stub_sets_plan_run_id_on_clarification(dummy_context: MagicMock) -> None:
     """Test stub w clarification."""
 
-    def returns_clarification(index, ctx, args, kwargs) -> Clarification:  # noqa: ANN001, ARG001
+    def returns_clarification(ctx: ToolStubContext) -> Clarification:
         return Clarification(
             category=ClarificationCategory.INPUT,
             user_guidance="help",
-            plan_run_id=ctx.plan_run.id,
+            plan_run_id=ctx.original_context.plan_run.id,
         )
 
     tool = ToolStub(
@@ -176,7 +176,7 @@ def test_tool_stub_registry_resolves_stubs() -> None:
     registry = MagicMock()
     registry.get_tools.return_value = [tool]
 
-    def stub_fn(index, ctx, args, kwargs) -> str:  # noqa: ANN001, ARG001
+    def stub_fn(ctx: ToolStubContext) -> str:  # noqa: ARG001
         return "ok"
 
     stub_registry = ToolStubRegistry(registry=registry, stubs={"my-tool": stub_fn})
@@ -217,7 +217,7 @@ def test_tool_stub_registry_fallbacks_and_calls_tracking() -> None:
     all_calls = stub_registry.get_tool_calls()
     assert isinstance(all_calls, list)
 
-    def stub_response(index: int, ctx: ToolRunContext, args: tuple, kwargs: dict) -> str:  # noqa: ARG001
+    def stub_response(ctx: ToolStubContext) -> str:  # noqa: ARG001
         return "stub"
 
     stub_registry = ToolStubRegistry(registry=registry, stubs={"base-tool": stub_response})

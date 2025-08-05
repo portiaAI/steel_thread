@@ -11,9 +11,20 @@ from portia import (
 )
 from portia.common import combine_args_kwargs
 from portia.tool_call import ToolCallRecord, ToolCallStatus
-from pydantic import Field
+from pydantic import BaseModel, Field
 
-ToolResponseStub = Callable[[int, ToolRunContext, tuple[Any, ...], dict[str, Any]], Any]
+
+class ToolStubContext(BaseModel):
+    """Context passed to tool stubs."""
+
+    tool_call_index: int
+    original_context: ToolRunContext
+    original_tool: Tool | None
+    args: tuple[Any, ...]
+    kwargs: dict[str, Any]
+
+
+ToolResponseStub = Callable[[ToolStubContext], Any]
 
 
 class ToolStub(Tool):
@@ -65,15 +76,22 @@ class ToolStub(Tool):
         call_index = len(self.tool_calls)
         tool_call_status = ToolCallStatus.SUCCESS
 
-        if self.child_tool:
+        if self.return_callable:
             try:
-                tool_output = self.child_tool.run(ctx, *args, **kwargs)
+                stub_ctx = ToolStubContext(
+                    tool_call_index=call_index,
+                    original_context=ctx,
+                    args=args,
+                    kwargs=kwargs,
+                    original_tool=self.child_tool,
+                )
+                tool_output = self.return_callable(stub_ctx)
             except Exception as e:  # noqa: BLE001
                 tool_output = str(e)
                 tool_call_status = ToolCallStatus.FAILED
-        elif self.return_callable:
+        elif self.child_tool:
             try:
-                tool_output = self.return_callable(call_index, ctx, args, kwargs)
+                tool_output = self.child_tool.run(ctx, *args, **kwargs)
             except Exception as e:  # noqa: BLE001
                 tool_output = str(e)
                 tool_call_status = ToolCallStatus.FAILED
