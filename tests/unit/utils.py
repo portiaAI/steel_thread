@@ -20,6 +20,7 @@ def get_test_config(**kwargs) -> Config:  # noqa: ANN003
         **kwargs,
         default_log_level=LogLevel.INFO,
         openai_api_key=SecretStr("123"),
+        portia_api_key=SecretStr("123"),
         storage_class=StorageClass.MEMORY,
         llm_redis_cache_url=None,
     )
