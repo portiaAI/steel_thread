@@ -126,7 +126,7 @@ portia = Portia(
 st.run_evals(
     portia,
     EvalConfig(
-        eval_dataset_name="offline_evals_v1",
+        eval_dataset_name="evals_v1",
         config=config,
         iterations=1,
         evaluators=[DefaultEvaluator(config), EmojiEvaluator(config)],

@@ -1,6 +1,6 @@
 # 🧵 SteelThread: Agent Evaluation Framework
 
-**SteelThread** is a flexible evaluation framework built around Portia, designed to support robust **online** and **offline** testing of agentic workflows. It enables configurable datasets, custom metric definitions, LLM-based judging, and stubbed tool behaviors for reproducible and interpretable scoring.
+**SteelThread** is a flexible evaluation framework built around Portia, designed to support robust **evals** and **stream based** testing of agentic workflows. It enables configurable datasets, custom metric definitions, LLM-based judging, and stubbed tool behaviors for reproducible and interpretable scoring.
 
 ---
 
@@ -27,37 +27,41 @@ uv add steel-thread
 
 **SteelThread** is designed around deep integration with Portia. It uses data from Portia Cloud to generate test cases and evals. 
 
-When running evals through **SteelThread** we offer two distinct types:
+When running monitoring through **SteelThread** we offer two distinct types:
 
-- **Offline evals** are static datasets designed to be run multiple times to allow you to analyze how changes to your agents affect performance.
-- **Online evals** are dynamic datasets that automatically include your latest plans and plan runs, allowing you to measure performance in production.
+- **Evals** are static datasets designed to be run multiple times to allow you to analyze how changes to your agents affect performance.
+- **Streams** are dynamic streams that automatically include your latest plans and plan runs, allowing you to measure performance in production.
 
-Both types of evals can be configured via the [cloud dashboard.](https://app.portialabs.ai/dashboard/evals). Once you've created a dataset record the name of it.
+Both types of monitoring can be configured via the [cloud dashboard.](https://app.portialabs.ai/dashboard/monitoring). Once you've created a dataset record the name of it.
 
 ---
 
 ### 3. **Basic Usage**
 
-Run a full suite of online and offline evaluations using the name of the dataset from step 2. This will use the built in set of evaluators to give you data out of the box.
+Run a full suite of evals and streams using the name of the dataset from step 2. This will use the built in set of evaluators to give you data out of the box.
 
 ```python
 from portia import Config, LogLevel, Portia
-from steelthread.steelthread import SteelThread, OnlineEvalConfig, OfflineEvalConfig
+from steelthread.steelthread import SteelThread, StreamConfig, EvalConfig
 
 # Setup
 config = Config.from_default(default_log_level=LogLevel.CRITICAL)
-runner = SteelThread()
+st = SteelThread()
 
-# Online evals
-runner.run_online(
-    OnlineEvalConfig(eval_set_name="online_evals", config=config)
+# Process stream
+st.process_stream(
+    StreamConfig(stream_name="stream_v1", config=config, additional_tags={"feeling": "neutral"})
 )
 
-# Offline evals
+# Run evals
 portia = Portia(config)
-runner.run_offline(
+st.run_evals(
     portia,
-    OfflineEvalConfig(eval_set_name="offline_evals_v1", config=config, iterations=4)
+    EvalConfig(
+        eval_dataset_name="evals_v1",
+        config=config,
+        iterations=4,
+    ),
 )
 ```
 
@@ -66,14 +70,19 @@ runner.run_offline(
 ## 🛠️ Features
 
 ### 🧪 Custom Metrics
-Define your own evaluators by subclassing `OfflineEvaluator`:
+Define your own evaluators by subclassing `Evaluator`:
 
 ```python
-from steelthread.offline_evaluators.evaluator import OfflineEvaluator
+from steelthread.evals.evaluator import Evaluator
 from steelthread.metrics.metric import Metric
 
-class EmojiEvaluator(OfflineEvaluator):
-    def eval_test_case(self, test_case, final_plan, final_plan_run, additional_data):
+class EmojiEvaluator(Evaluator):
+    def eval_test_case(self,  
+        test_case: EvalTestCase,
+        final_plan: Plan,
+        final_plan_run: PlanRun,
+        additional_data: PlanRunMetadata, 
+    ):
         output = final_plan_run.outputs.final_output.get_value() or ""
         count = output.count("😊")
         score = min(count / 2, 1.0)
@@ -87,16 +96,30 @@ class EmojiEvaluator(OfflineEvaluator):
 Stub tool responses deterministically for fast and reproducible testing:
 
 ```python
-from steelthread.portia.tools import ToolStubRegistry
+from steelthread.portia.tools import ToolStubRegistry, ToolStubContext
 
+def weather_stub_response(
+    ctx: ToolStubContext,
+) -> str:
+    """Stub for weather tool to return deterministic weather."""
+    city = ctx.kwargs.get("city", "").lower()
+    if city == "sydney":
+        return "33.28"
+    if city == "london":
+        return "2.00"
+
+    return f"Unknown city: {city}"
+
+
+# Run evals with stubs + custom evaluators.
 portia = Portia(
     config,
     tools=ToolStubRegistry(
         DefaultToolRegistry(config),
         stubs={
-            "weather_tool": lambda i, ctx, args, kwargs: "20.0"  # Always returns 20.0
-        }
-    )
+            "weather_tool": weather_stub_response,
+        },
+    ),
 )
 ```
 
@@ -104,26 +127,6 @@ portia = Portia(
 
 **SteelThread** is designed around plugable metrics backends. By default metrics are logged and sent to Portia Cloud for visualization but you can add additional backends via the config options.
 
----
-
-## 📁 Project Structure
-
-```
-steelthread/
-├── metrics/                 # Metric schema & backend logging
-│   └── metric.py
-├── offline_evaluators/     # Offline test runners and evaluators
-│   ├── eval_runner.py
-│   ├── evaluator.py
-│   └── test_case.py
-├── online_evaluators/      # Online test runners
-│   └── eval_runner.py
-├── portia/                 # Tool stubbing and integration with Portia
-│   └── tools.py
-├── shared/                 # Shared storage and model definitions
-│   └── readonly_storage.py
-└── steelthread.py          # Main runner entry point
-```
 
 ---
 
@@ -132,19 +135,28 @@ steelthread/
 See how everything fits together:
 
 ```python
-from steelthread.steelthread import SteelThread, OfflineEvalConfig
+from steelthread.steelthread import SteelThread, EvalConfig
 from steelthread.portia.tools import ToolStubRegistry
 from steelthread.metrics.metric import Metric
-from steelthread.offline_evaluators.default_evaluator import DefaultOfflineEvaluator
-from steelthread.offline_evaluators.evaluator import OfflineEvaluator
+from steelthread.evals.evaluator import Evaluator
 from portia import Config, Portia, DefaultToolRegistry, ToolRunContext
 
 # Custom tool stub
-def weather_stub_response(i, ctx, args, kwargs):
-    return "33.28" if kwargs.get("city") == "sydney" else "2.00"
+def weather_stub_response(
+    ctx: ToolStubContext,
+) -> str:
+    """Stub for weather tool to return deterministic weather."""
+    city = ctx.kwargs.get("city", "").lower()
+    if city == "sydney":
+        return "33.28"
+    if city == "london":
+        return "2.00"
+
+    return f"Unknown city: {city}"
+
 
 # Custom evaluator
-class EmojiEvaluator(OfflineEvaluator):
+class EmojiEvaluator(Evaluator):
     def eval_test_case(self, test_case,plan, plan_run, metadata):
         out = plan_run.outputs.final_output.get_value() or ""
         count = out.count("🌞")
@@ -152,19 +164,18 @@ class EmojiEvaluator(OfflineEvaluator):
 
 # Setup
 config = Config.from_default()
-runner = SteelThread()
+st = SteelThread()
 portia = Portia(
     config,
     tools=ToolStubRegistry(DefaultToolRegistry(config), {"weather_tool": weather_stub_response})
 )
 
-runner.run_offline(
+st.run_evals(
     portia,
-    OfflineEvalConfig(
-        eval_set_name="offline_evals_v1",
+    EvalConfig(
+        eval_dataset_name="evals_v1",
         config=config,
-        iterations=1,
-        evaluators=[DefaultOfflineEvaluator(config), EmojiEvaluator(config)],
+        iterations=4,
     ),
 )
 ```
