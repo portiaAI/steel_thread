@@ -1,4 +1,4 @@
-"""Class for tagging metrics"""
+"""Class for tagging metrics."""
 
 from portia import Config, Plan, PlanRun
 
@@ -13,17 +13,19 @@ class EvalMetricTagger:
     def attach_tags_to_test_case(
         metrics: list[EvalMetric] | EvalMetric,
         test_case: EvalTestCase,
-        plan: Plan,
-        plan_run: PlanRun | None,
+        plan: Plan,  # noqa: ARG004
+        plan_run: PlanRun | None,  # noqa: ARG004
         config: Config,
         additional_tags: dict[str, str] | None = None,
     ) -> list[EvalMetric]:
         """Attach configuration-based and additional tags to a metric.
 
         Args:
-            tc (OnlineTestCase | OfflineTestCase): the
-            config (Config): Configuration object providing model names.
-            metric (Metric): The original metric to tag.
+            metrics (list[EvalMetric] | EvalMetric): the original metrics to tag.
+            test_case (EvalTestCase): the original test case.
+            plan (Plan): The associated plan
+            plan_run (PlanRun): The associated plan_run
+            config (Config): Portia config used.
             additional_tags (dict[str, str] | None): Extra tags to include (optional).
 
         Returns:

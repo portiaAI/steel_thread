@@ -58,6 +58,7 @@ class AssertionEvaluator:
 
         Args:
             config (Config): Portia config for model access or scoring.
+            test_case (EvalTestCase): The test case.
             plan (Plan): The linked plan.
             plan_run (PlanRun): The plan run to evaluate.
             metadata (PlanRunMetadata): Additional data about the run (e.g., latency, tool calls).
@@ -194,8 +195,8 @@ class AssertionEvaluator:
 
         if expected_calls == 0 and actual_calls == 0:
             score = 1.0
-        elif actual_calls > 0:
-            score = expected_calls / actual_calls
+        elif expected_calls > 0:
+            score = min(actual_calls / expected_calls, 1.0)
         else:
             score = 0.0
 

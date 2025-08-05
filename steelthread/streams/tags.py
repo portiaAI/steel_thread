@@ -1,7 +1,5 @@
 """Class for tagging metrics."""
 
-from portia import Config
-
 from steelthread.streams.metrics import StreamMetric
 from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
 
@@ -12,16 +10,16 @@ class StreamMetricTagger:
     @staticmethod
     def attach_tags(
         metrics: list[StreamMetric] | StreamMetric,
-        stream_item: PlanStreamItem | PlanRunStreamItem,
-        config: Config,
+        stream_item: PlanStreamItem | PlanRunStreamItem,  # noqa: ARG004
         additional_tags: dict[str, str] | None = None,
     ) -> list[StreamMetric]:
         """Attach configuration-based and additional tags to a metric.
 
         Args:
             tc (OnlineTestCase | OfflineTestCase): the
-            config (Config): Configuration object providing model names.
-            metric (Metric): The original metric to tag.
+
+            metrics (list[StreamMetric]): The original metrics to tag.
+            stream_item (PlanStreamItem | PlanRunStreamItem): the item the metric is for.
             additional_tags (dict[str, str] | None): Extra tags to include (optional).
 
         Returns:
@@ -31,13 +29,9 @@ class StreamMetricTagger:
 
         def append_tags(m: StreamMetric) -> StreamMetric:
             m.tags = {
-                "stream": str(stream_item.stream),
-                "planning_model": config.get_planning_model().model_name,
-                "execution_model": config.get_execution_model().model_name,
-                "introspection_model": config.get_introspection_model().model_name,
-                "summarizer_model": config.get_summarizer_model().model_name,
                 **(additional_tags or {}),
             }
+            m.score = 0.789
             return m
 
         if isinstance(metrics, StreamMetric):

@@ -61,7 +61,7 @@ class Evaluator(ABC):
             additional_data (PlanRunMetadata): Metadata like latency and tool call history.
 
         Returns:
-            list[EvalMetric] | EvalMetric | None: One or more EvalMetrics representing evaluation results.
+            list[EvalMetric] | EvalMetric | None: One or more EvalMetrics representing results.
 
         """
         return []

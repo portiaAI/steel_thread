@@ -50,7 +50,7 @@ class FinalOutputAssertion(BaseModel):
     value: str
 
 
-class ToolCallRecord(BaseModel):
+class ToolCallAssertion(BaseModel):
     """Assertion record for whether a specific tool was called.
 
     Attributes:
@@ -66,12 +66,12 @@ class ToolCallsAssertion(BaseModel):
 
     Attributes:
         type (Literal["tool_calls"]): Discriminator for the assertion type.
-        calls (dict[str, ToolCallRecord]): Mapping of tool names to expected call status.
+        calls (dict[str, ToolCallAssertion]): Mapping of tool names to expected call status.
 
     """
 
     type: Literal["tool_calls"]
-    calls: dict[str, ToolCallRecord]
+    calls: dict[str, ToolCallAssertion]
 
 
 class LatencyAssertion(BaseModel):

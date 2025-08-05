@@ -1,14 +1,14 @@
 """Stream Metrics."""
 
 from abc import ABC, abstractmethod
-from typing import Any
-from uuid import UUID
 
 import httpx
 import pandas as pd
 from portia import Config
 from portia.storage import PortiaCloudClient
 from pydantic import BaseModel, Field, field_validator
+
+from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
 
 MIN_EXPLANATION_LENGTH = 10
 
@@ -17,10 +17,12 @@ class StreamMetric(BaseModel):
     """A single record of an observation.
 
     Attributes:
-        stream_item (UUID): The id of the stream item this metric relates to
+        stream (str): The id of the stream this metric relates to
+        stream_item (str): The id of the stream item this metric relates to
         score (float): The numeric value of the metric.
         name (str): The name of the metric.
         description (str): A human-readable description of the metric.
+        explanation (str | None): An optional explanation of the score.
         tags (dict[str, str]): A set of tags to query this metric by.
 
     """
@@ -35,6 +37,34 @@ class StreamMetric(BaseModel):
         description="An optional explanation of the score.",
     )
     tags: dict[str, str] | None = Field(default={}, description="Tags for querying this metric.")
+
+    @classmethod
+    def from_stream_item(
+        cls,
+        stream_item: PlanStreamItem | PlanRunStreamItem,
+        score: float,
+        name: str,
+        description: str,
+        explanation: str | None = None,
+    ) -> "StreamMetric":
+        """Create a metric from a stream item.
+
+        Args:
+            stream_item (PlanStreamItem | PlanRunStreamItem): The stream item this metric relates to
+            score (float): The numeric value of the metric.
+            name (str): The name of the metric.
+            description (str): A human-readable description of the metric.
+            explanation (str | None): An optional explanation of the score.
+
+        """
+        return cls(
+            stream=stream_item.stream,
+            stream_item=stream_item.stream_item,
+            score=score,
+            name=name,
+            description=description,
+            explanation=explanation,
+        )
 
     @field_validator("explanation")
     @classmethod
@@ -90,18 +120,6 @@ class StreamLogMetricBackend(StreamMetricsBackend):
     This backend prints average metric scores grouped by name and tags.
     """
 
-    def flatten_dict(
-        self, d: dict[str, Any], parent_key: str = "", sep: str = "."
-    ) -> dict[str, Any]:
-        items = []
-        for k, v in d.items():
-            key = f"{parent_key}{sep}{k}" if parent_key else k
-            if isinstance(v, dict):
-                items.extend(self.flatten_dict(v, key, sep=sep).items())
-            else:
-                items.append((key, v))
-        return dict(items)
-
     def save_metrics(self, metrics: list[StreamMetric]) -> None:
         """Log metrics via pandas.
 
@@ -112,25 +130,21 @@ class StreamLogMetricBackend(StreamMetricsBackend):
             metrics (list[MetricWithTag]): The metrics to log.
 
         """
-        # flattened = []
-        # for m in metrics:
-        #     row = m.model_dump()
-        #     row["tags"] = self.flatten_dict(row.get("tags", {}))
-        #     flattened.append(row)
+        flattened = [m.model_dump() for m in metrics]
 
-        # # Convert list of metrics to DataFrame
-        # dataframe = pd.DataFrame(flattened)
+        # Convert list of metrics to DataFrame
+        dataframe = pd.DataFrame(flattened)
 
-        # # Expand the 'tags' column into separate columns
-        # tags_df = dataframe["tags"].apply(pd.Series)
-        # dataframe = pd.concat([dataframe.drop(columns=["tags"]), tags_df], axis=1)
+        # Expand the 'tags' column into separate columns
+        tags_df = dataframe["tags"].apply(pd.Series)
+        dataframe = pd.concat([dataframe.drop(columns=["tags"]), tags_df], axis=1)
 
-        # # Determine which columns to group by: metric name + all tag columns
-        # group_keys = ["name", *tags_df.columns.tolist()]
+        # Determine which columns to group by: metric name + all tag columns
+        group_keys = ["name", *tags_df.columns.tolist()]
 
-        # # Group by name + tags, then compute mean score
-        # avg_scores = dataframe.groupby(group_keys)["score"].mean().reset_index()
+        # Group by name + tags, then compute mean score
+        avg_scores = dataframe.groupby(group_keys)["score"].mean().reset_index()
 
-        # # Print
-        # print("\n=== Metric Averages ===")  # noqa: T201
-        # print(avg_scores.to_string(index=False))  # noqa: T201
+        # Print
+        print("\n=== Metric Averages ===")  # noqa: T201
+        print(avg_scores.to_string(index=False))  # noqa: T201

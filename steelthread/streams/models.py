@@ -2,7 +2,6 @@
 
 import enum
 from typing import Any
-from uuid import UUID
 
 from portia import Plan, PlanRun
 from pydantic import BaseModel
