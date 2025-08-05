@@ -170,7 +170,11 @@ class EvalRunner:
         """
         start = time.perf_counter()
         if tc.input_config.type == "query":
-            plan = portia.plan(tc.input_config.value, tools=tc.input_config.tools)
+            plan = portia.plan(
+                tc.input_config.value,
+                tools=tc.input_config.tools,
+                end_user=tc.input_config.end_user_id,
+            )
             output = portia.run_plan(plan)
         elif tc.input_config.type == "plan_id":
             plan = portia.storage.get_plan(

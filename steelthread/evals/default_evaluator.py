@@ -206,7 +206,9 @@ class AssertionEvaluator:
             run=self.test_case.run,
             score=score,
             name=assertion.type,
-            expectation=list(assertion.calls),
+            expectation=[
+                tool_name for tool_name in assertion.calls if assertion.calls[tool_name].called
+            ],
             actual_value=[tc.tool_name for tc in self.metadata.tool_calls],
             description="Tool call usage score",
         )
