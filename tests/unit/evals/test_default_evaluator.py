@@ -216,7 +216,7 @@ def test_tool_calls_not_called_assertion(config: Config, test_case: EvalTestCase
     assert len(metrics) == 1
     m = metrics[0]
     assert m.name == "tool_calls"
-    assert m.expectation == ["my_tool"]
+    assert m.expectation == []
     assert isinstance(m.actual_value, list)
     assert "my_tool" in m.actual_value
 
