@@ -1,6 +1,5 @@
 """Backend for Portia evals."""
 
-
 import httpx
 from portia import (
     Config,
@@ -73,7 +72,7 @@ class PortiaStreamBackend(BaseModel):
         return Stream(**response.json())
 
     def load_plan_stream_items(self, stream_id: str, batch_size: int) -> list[PlanStreamItem]:
-        """Load online test cases from the Portia API with pagination."""
+        """Load stream items from the Portia API with pagination."""
         client = self.client()
         url = f"/api/v0/evals/stream-items/?stream_id={stream_id}"
         test_cases = []
@@ -98,7 +97,7 @@ class PortiaStreamBackend(BaseModel):
     def load_plan_run_stream_items(
         self, stream_id: str, batch_size: int
     ) -> list[PlanRunStreamItem]:
-        """Load online test cases from the Portia API with pagination."""
+        """Load stream items from the Portia API with pagination."""
         client = self.client()
         url = f"/api/v0/evals/stream-items/?stream_id={stream_id}"
         test_cases = []

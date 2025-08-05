@@ -1,4 +1,4 @@
-"""Online LLM as Judge implementation."""
+"""LLM as Judge implementation."""
 
 from portia import Config, Output, Plan
 from portia.plan_run import PlanRun
@@ -213,7 +213,7 @@ class AssertionEvaluator:
 
 
 class DefaultEvaluator(Evaluator):
-    """Default implementation of an offline evaluator that evaluates test case assertions."""
+    """Default implementation of an evaluator that evaluates test case assertions."""
 
     def eval_test_case(
         self,
@@ -225,7 +225,7 @@ class DefaultEvaluator(Evaluator):
         """Evaluate all assertions defined in the test case.
 
         Args:
-            test_case (OfflineTestCase): The test case to evaluate.
+            test_case (TestCase): The test case to evaluate.
             final_plan (Plan): The executed plan to evaluate.
             final_plan_run (PlanRun): The executed plan run to evaluate.
             additional_data (PlanRunMetadata): Additional context like latency, tool usage.

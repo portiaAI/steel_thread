@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from steelthread.streams.llm_as_judge import LLMJudgeOnlineEvaluator
+from steelthread.streams.llm_as_judge import LLMJudgeEvaluator
 from steelthread.streams.metrics import StreamMetric
 from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
 from steelthread.utils.llm import MetricOnly
@@ -29,7 +29,7 @@ def test_process_plan_returns_metrics(
     mock_scorer.score.return_value = mock_metrics
     mock_scorer_cls.return_value = mock_scorer
 
-    evaluator = LLMJudgeOnlineEvaluator(config=get_test_config())
+    evaluator = LLMJudgeEvaluator(config=get_test_config())
     plan, _ = get_test_plan_run()
     stream_item = PlanStreamItem(stream="s1", stream_item="i1", plan=plan)
 
@@ -50,7 +50,7 @@ def test_process_plan_run_returns_metrics(
     mock_scorer.score.return_value = mock_metrics
     mock_scorer_cls.return_value = mock_scorer
 
-    evaluator = LLMJudgeOnlineEvaluator(config=get_test_config())
+    evaluator = LLMJudgeEvaluator(config=get_test_config())
     plan, plan_run = get_test_plan_run()
     stream_item = PlanRunStreamItem(stream="s1", stream_item="i2", plan=plan, plan_run=plan_run)
 

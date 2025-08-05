@@ -113,7 +113,7 @@ def weather_stub_response(
     return f"Unknown city: {city}"
 
 
-# Run offline evals with stubs + custom evaluators.
+# Run evals with stubs + custom evaluators.
 portia = Portia(
     config,
     tools=ToolStubRegistry(

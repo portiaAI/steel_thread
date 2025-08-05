@@ -1,1 +1,1 @@
-"""Contains implementations of offline evals for SteelThread."""
+"""Contains implementations of evals for SteelThread."""

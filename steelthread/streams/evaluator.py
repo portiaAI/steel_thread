@@ -1,4 +1,4 @@
-"""Abstract base class for online evaluators."""
+"""Abstract base class for stream evaluators."""
 
 from abc import ABC, abstractmethod
 
@@ -9,7 +9,7 @@ from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
 
 
 class StreamEvaluator(ABC):
-    """Abstract base class for implementing online evaluation logic.
+    """Abstract base class for implementing stream evaluation logic.
 
     Subclasses must define logic to evaluate either a plan or a plan run,
     typically sourced from pre-recorded executions (e.g. production runs).

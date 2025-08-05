@@ -1,4 +1,4 @@
-"""Core offline evaluator abstraction."""
+"""Core evaluator abstraction."""
 
 from abc import ABC, abstractmethod
 
@@ -24,7 +24,7 @@ class PlanRunMetadata(BaseModel):
 
 
 class Evaluator(ABC):
-    """Abstract base class for implementing offline evaluation logic.
+    """Abstract base class for implementing evaluation logic.
 
     Subclasses should implement the `eval_test_case` method to evaluate
     a `PlanRun` against an `EvalTestCase` and return one or more EvalMetrics.

@@ -7,7 +7,7 @@ from portia.portia import PortiaCloudStorage
 
 from steelthread.streams.backend import PortiaStreamBackend
 from steelthread.streams.evaluator import StreamEvaluator
-from steelthread.streams.llm_as_judge import LLMJudgeOnlineEvaluator
+from steelthread.streams.llm_as_judge import LLMJudgeEvaluator
 from steelthread.streams.metrics import (
     PortiaStreamMetricsBackend,
     StreamLogMetricBackend,
@@ -25,7 +25,7 @@ class StreamConfig:
         stream_name (str): The name of the evals containing test cases.
         portia_config (Config): Configuration for connecting to Portia API.
         iterations (int): Number of times to run each evaluation (default 3).
-        evaluators (list[OnlineEvaluator]): List of evaluator instances to apply.
+        evaluators (list[StreamEvaluator]): List of evaluator instances to apply.
         additional_tags (dict[str, str]): Tags to apply to generated metrics.
         metrics_backends (list[MetricsBackend]): Output destinations for metrics.
         max_concurrency (int | None): Maximum number of concurrent tests to run.
@@ -48,7 +48,7 @@ class StreamConfig:
         Args:
             stream_name (str): stream name to process.
             config (Config): Portia config (must include API key).
-            evaluators (list[OnlineEvaluator] | None): Evaluators to apply.
+            evaluators (list[StreamEvaluator] | None): Evaluators to apply.
             additional_tags (dict[str, str] | None): Extra tags to add to each metric.
             metrics_backends (list[MetricsBackend] | None): Metric writers.
             max_concurrency (int | None): Maximum number of concurrent tests to run.
@@ -58,7 +58,7 @@ class StreamConfig:
         config.must_get_api_key("portia_api_key")
         self.stream_name = stream_name
         self.portia_config = config
-        self.evaluators = evaluators or [LLMJudgeOnlineEvaluator(config)]
+        self.evaluators = evaluators or [LLMJudgeEvaluator(config)]
         self.additional_tags = additional_tags or {}
         self.metrics_backends = metrics_backends or [
             StreamLogMetricBackend(),
@@ -69,13 +69,13 @@ class StreamConfig:
 
 
 class StreamProcessor:
-    """Runner for executing online evaluation test cases and collecting metrics."""
+    """Runner for executing stream evaluation test cases and collecting metrics."""
 
     def __init__(self, config: StreamConfig) -> None:
         """Initialize the runner.
 
         Args:
-            config (OnlineEvalConfig): The configuration for the online evaluation run.
+            config (StreamConfig): The configuration for the stream.
 
         """
         self.config = config

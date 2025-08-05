@@ -1,1 +1,1 @@
-"""Contains implementations of online evals for SteelThread."""
+"""Contains implementations of streams for SteelThread."""

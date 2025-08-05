@@ -62,7 +62,7 @@ def test_eval_runner_run_method(
     runner = EvalRunner(mock_portia, config=config)
 
     test_case = make_test_case(with_plan=False)
-    mock_backend_cls.return_value.load_offline_evals.return_value = [test_case]
+    mock_backend_cls.return_value.load_evals.return_value = [test_case]
 
     mock_metric = EvalMetric.from_test_case(
         test_case=test_case,

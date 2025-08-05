@@ -17,18 +17,18 @@ class SteelThread:
         """Process stream items based on the config given.
 
         Args:
-            config (OnlineEvalConfig): Configuration for stream processor.
+            config (EvalConfig): Configuration for stream processor.
 
         """
         StreamProcessor(config).run()
 
     @staticmethod
     def run_evals(portia: Portia, config: EvalConfig) -> None:
-        """Run offline evaluations using Portia and the provided configuration.
+        """Run evaluations using Portia and the provided configuration.
 
         Args:
             portia (Portia): Portia instance used for model access and execution.
-            config (OfflineEvalConfig): Configuration for offline evaluation runs.
+            config (EvalConfig): Configuration for evaluation runs.
 
         """
         EvalRunner(portia, config).run()

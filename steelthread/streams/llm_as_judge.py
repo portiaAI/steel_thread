@@ -1,4 +1,4 @@
-"""Online LLM as Judge implementation."""
+"""LLM as Judge implementation."""
 
 from portia import Config
 
@@ -8,8 +8,8 @@ from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
 from steelthread.utils.llm import LLMMetricScorer, MetricOnly
 
 
-class LLMJudgeOnlineEvaluator(StreamEvaluator):
-    """Online evaluator that uses an LLM to score Plans and PlanRuns.
+class LLMJudgeEvaluator(StreamEvaluator):
+    """Evaluator that uses an LLM to score Plans and PlanRuns.
 
     This evaluator uses an LLM-as-Judge approach to assign scores to logical
     properties such as correctness, completeness, and success, based on the

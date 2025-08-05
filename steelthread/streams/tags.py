@@ -16,9 +16,7 @@ class StreamMetricTagger:
         """Attach configuration-based and additional tags to a metric.
 
         Args:
-            tc (OnlineTestCase | OfflineTestCase): the
-
-            metrics (list[StreamMetric]): The original metrics to tag.
+            metrics (list[StreamMetric] | StreamMetric): The original metrics to tag.
             stream_item (PlanStreamItem | PlanRunStreamItem): the item the metric is for.
             additional_tags (dict[str, str] | None): Extra tags to include (optional).
 

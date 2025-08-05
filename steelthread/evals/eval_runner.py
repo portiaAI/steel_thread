@@ -24,13 +24,13 @@ from steelthread.portia.tools import ToolStubRegistry
 
 
 class EvalConfig:
-    """Configuration for running offline evaluations.
+    """Configuration for running  evaluations.
 
     Attributes:
         eval_dataset_name (str): The name of the test eval set to evaluate.
         portia_config (Config): Portia configuration object.
         iterations (int): Number of times each test case should be run (defaults to 3).
-        evaluators (list[OfflineEvaluator]): List of evaluators to apply to each run.
+        evaluators (list[Evaluator]): List of evaluators to apply to each run.
         additional_tags (dict[str, str]): Tags to attach to each metric result.
         metrics_backends (list[MetricsBackend]): Where to send/save metric results.
         max_concurrency (int | None): Maximum number of concurrent tests to run.
@@ -47,13 +47,13 @@ class EvalConfig:
         metrics_backends: list[MetricsBackend] | None = None,
         max_concurrency: int | None = None,
     ) -> None:
-        """Initialize OfflineEvalConfig.
+        """Initialize EvalConfig.
 
         Args:
             eval_dataset_name (str): Name of the eval set to evaluate.
             config (Config): Portia config with API key.
             iterations (int | None): How many times to run each test case.
-            evaluators (list[OfflineEvaluator] | None): Evaluators to use (defaults to built-in).
+            evaluators (list[Evaluator] | None): Evaluators to use (defaults to built-in).
             additional_tags (dict[str, str] | None): Custom tags to attach to metrics.
             metrics_backends (list[MetricsBackend] | None): Output backends (defaults to logger).
             max_concurrency (int | None): Maximum number of concurrent tests to run.
@@ -73,7 +73,7 @@ class EvalConfig:
 
 
 class EvalRunner:
-    """Runner for executing and scoring offline evaluations."""
+    """Runner for executing and scoring evaluations."""
 
     def __init__(self, portia: Portia, config: EvalConfig) -> None:
         """Initialize the runner.
@@ -82,7 +82,7 @@ class EvalRunner:
 
         Args:
             portia (Portia): Portia engine instance to execute runs.
-            config (OfflineEvalConfig): Offline evaluation configuration.
+            config (EvalConfig): Evaluation configuration.
 
         """
         self.original_portia = portia
@@ -127,7 +127,7 @@ class EvalRunner:
         return all_metrics
 
     def run(self) -> None:
-        """Run the offline evaluation process.
+        """Run the evaluation process.
 
         - Loads test cases from backend.
         - Executes each test case multiple times.
@@ -161,7 +161,7 @@ class EvalRunner:
         """Execute a single test case and record latency.
 
         Args:
-            tc: The offline test case to run.
+            tc: The test case to run.
             portia: The instance of portia to use.
 
         Returns:

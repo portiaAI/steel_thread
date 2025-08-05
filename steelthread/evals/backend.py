@@ -44,7 +44,7 @@ class PortiaBackend(BaseModel):
             raise ValueError(error_str)
 
     def load_evals(self, dataset_name: str, run_id: str) -> list[EvalTestCase]:
-        """Load offline test cases from the Portia API with pagination."""
+        """Load test cases from the Portia API with pagination."""
         client = self.client()
         url = f"/api/v0/evals/dataset-test-cases/?dataset_name={dataset_name}"
         test_cases = []

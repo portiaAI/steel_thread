@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 class InputConfig(BaseModel):
-    """Configuration for offline test case input.
+    """Configuration for test case input.
 
     Attributes:
         type (Literal["query", "plan_id"]): The type of input used (query or plan ID).
