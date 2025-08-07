@@ -128,6 +128,7 @@ class StreamLogMetricBackend(StreamMetricsBackend):
 
         Args:
             metrics (list[StreamMetric]): The metrics to log.
+
         """
         flattened = [m.model_dump() for m in metrics]
 
