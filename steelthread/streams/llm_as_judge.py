@@ -5,7 +5,7 @@ from portia import Config
 from steelthread.streams.evaluator import StreamEvaluator
 from steelthread.streams.metrics import StreamMetric
 from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
-from steelthread.utils.llm import LLMMetricScorer, MetricOnly
+from steelthread.utils.llm import LLMScorer, MetricOnly
 
 
 class LLMJudgeEvaluator(StreamEvaluator):
@@ -24,7 +24,7 @@ class LLMJudgeEvaluator(StreamEvaluator):
 
         """
         self.config = config
-        self.scorer = LLMMetricScorer(config)
+        self.scorer = LLMScorer(config)
 
     def process_plan(self, stream_item: PlanStreamItem) -> list[StreamMetric]:
         """Evaluate a Plan (not executed) using LLM-based scoring.
@@ -59,9 +59,8 @@ class LLMJudgeEvaluator(StreamEvaluator):
         )
 
         return [
-            StreamMetric(
-                stream=stream_item.stream,
-                stream_item=stream_item.stream_item,
+            StreamMetric.from_stream_item(
+                stream_item=stream_item,
                 score=m.score,
                 name=m.name,
                 description=m.description,
@@ -101,9 +100,8 @@ class LLMJudgeEvaluator(StreamEvaluator):
         )
 
         return [
-            StreamMetric(
-                stream=stream_item.stream,
-                stream_item=stream_item.stream_item,
+            StreamMetric.from_stream_item(
+                stream_item=stream_item,
                 score=m.score,
                 name=m.name,
                 description=m.description,

@@ -17,7 +17,7 @@ from steelthread.evals.models import (
     ToolCallAssertion,
     ToolCallsAssertion,
 )
-from steelthread.utils.llm import LLMMetricScorer, MetricOnly
+from steelthread.utils.llm import LLMScorer, MetricOnly
 from tests.unit.utils import get_test_config, get_test_plan_run
 
 
@@ -259,9 +259,9 @@ def test_tool_calls_no_call_assertion(config: Config, test_case: EvalTestCase) -
     assert m.expectation == ["my_tool"]
 
 
-@patch("steelthread.evals.default_evaluator.LLMMetricScorer")
+@patch("steelthread.evals.default_evaluator.LLMScorer")
 def test_final_output_llm_judge(
-    mock_scorer_class: LLMMetricScorer, config: Config, test_case: EvalTestCase
+    mock_scorer_class: LLMScorer, config: Config, test_case: EvalTestCase
 ) -> None:
     """Test outcomes."""
     plan, plan_run = get_test_plan_run()
@@ -303,5 +303,5 @@ def test_final_output_llm_judge(
     assert m.description == "LLM-based final output score"
     assert m.explanation == "LLM says it's close enough"
 
-    # Check LLMMetricScorer was called correctly
+    # Check LLMScorer was called correctly
     mock_scorer_class.assert_called_once_with(config)  # type: ignore  # noqa: PGH003

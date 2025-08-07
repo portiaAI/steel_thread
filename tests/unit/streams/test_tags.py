@@ -30,7 +30,7 @@ def test_attach_tags_single_metric(stream_item: PlanStreamItem) -> None:
     assert isinstance(tagged, list)
     assert len(tagged) == 1
     assert tagged[0].tags == {"env": "test"}
-    assert tagged[0].score == 0.789
+    assert tagged[0].score == 0.1
 
 
 def test_attach_tags_multiple_metrics(stream_item: PlanStreamItem) -> None:
@@ -56,4 +56,3 @@ def test_attach_tags_multiple_metrics(stream_item: PlanStreamItem) -> None:
     assert len(tagged) == 2
     for m in tagged:
         assert m.tags == {"stage": "eval"}
-        assert m.score == 0.789

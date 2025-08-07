@@ -19,7 +19,7 @@ def mock_metrics() -> list[MetricOnly]:
     ]
 
 
-@patch("steelthread.streams.llm_as_judge.LLMMetricScorer")
+@patch("steelthread.streams.llm_as_judge.LLMScorer")
 def test_process_plan_returns_metrics(
     mock_scorer_cls: MagicMock,
     mock_metrics: list[MetricOnly],
@@ -40,7 +40,7 @@ def test_process_plan_returns_metrics(
     mock_scorer.score.assert_called_once()
 
 
-@patch("steelthread.streams.llm_as_judge.LLMMetricScorer")
+@patch("steelthread.streams.llm_as_judge.LLMScorer")
 def test_process_plan_run_returns_metrics(
     mock_scorer_cls: MagicMock,
     mock_metrics: list[MetricOnly],

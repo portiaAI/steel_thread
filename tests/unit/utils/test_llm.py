@@ -7,7 +7,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from portia import Message
 
 from steelthread.utils.llm import (
-    LLMMetricScorer,
+    LLMScorer,
     MetricOnly,
     MetricOnlyList,
 )
@@ -81,7 +81,7 @@ def test_llm_metric_scorer_score(monkeypatch: MonkeyPatch) -> None:  # noqa: ARG
     mock_config = MagicMock()
     mock_config.get_default_model.return_value = mock_model
 
-    scorer = LLMMetricScorer(config=mock_config)
+    scorer = LLMScorer(config=mock_config)
 
     task_data = ["Step 1: Do X", "Step 2: Do Y"]
     metrics_to_score = [

@@ -38,7 +38,7 @@ class MetricOnlyList(BaseModel):
     metrics: list[MetricOnly]
 
 
-class LLMMetricScorer:
+class LLMScorer:
     """An implementation of an LLM as Judge to return metrics.
 
     Uses a configured LLM to score a list of metrics against task data, returning scores
@@ -52,7 +52,7 @@ class LLMMetricScorer:
         For each metric provided please provide a score between 0 and 1 based on the data and task
         provided. IMPORTANT - Also include an explanation as to why you score it this way.""",
     ) -> None:
-        """Initialize the LLMMetricScorer.
+        """Initialize the LLMScorer.
 
         Args:
             config (Config): Configuration object providing model access.
@@ -99,8 +99,10 @@ class LLMMetricScorer:
             .get_structured_response(messages, MetricOnlyList)
             .metrics
         )
+        class_name = self.__class__.__name__
         [
-            print(f"[LLM Judge] {metric.name}:{metric.score} explanation: {metric.explanation}")  # noqa: T201
+            # use the name of the class here
+            print(f"[{class_name}] {metric.name}:{metric.score} explanation: {metric.explanation}")  # noqa: T201
             for metric in metrics
         ]
 

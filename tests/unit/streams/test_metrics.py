@@ -140,6 +140,5 @@ def test_stream_log_metrics_backend_logs_metrics(capfd: pytest.CaptureFixture) -
 
     backend.save_metrics([metric1, metric2])
     out, _ = capfd.readouterr()
-    assert "=== Metric Averages ===" in out
-    assert "success" in out
-    assert "0.75" in out or "0.749" in out  # average of 0.9 and 0.6
+    assert "=== Metric Averages by Stream Item ===" in out
+    assert "0.9" in out or "0.6" in out

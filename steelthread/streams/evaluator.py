@@ -1,14 +1,12 @@
 """Abstract base class for stream evaluators."""
 
-from abc import ABC, abstractmethod
-
 from portia import Config
 
 from steelthread.streams.metrics import StreamMetric
 from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
 
 
-class StreamEvaluator(ABC):
+class StreamEvaluator:
     """Abstract base class for implementing stream evaluation logic.
 
     Subclasses must define logic to evaluate either a plan or a plan run,
@@ -29,10 +27,9 @@ class StreamEvaluator(ABC):
         super().__init__()
         self.config = config
 
-    @abstractmethod
     def process_plan(
         self,
-        stream_item: PlanStreamItem,
+        stream_item: PlanStreamItem,  # noqa: ARG002
     ) -> list[StreamMetric] | StreamMetric | None:
         """Process a Plan stream item.
 
@@ -45,10 +42,9 @@ class StreamEvaluator(ABC):
         """
         return []
 
-    @abstractmethod
     def process_plan_run(
         self,
-        stream_item: PlanRunStreamItem,
+        stream_item: PlanRunStreamItem,  # noqa: ARG002
     ) -> list[StreamMetric] | StreamMetric | None:
         """Process a PlanRunStream item.
 

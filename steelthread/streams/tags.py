@@ -29,7 +29,6 @@ class StreamMetricTagger:
             m.tags = {
                 **(additional_tags or {}),
             }
-            m.score = 0.789
             return m
 
         if isinstance(metrics, StreamMetric):

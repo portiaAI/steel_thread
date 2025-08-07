@@ -13,7 +13,7 @@ from steelthread.evals.models import (
     OutcomeAssertion,
     ToolCallsAssertion,
 )
-from steelthread.utils.llm import LLMMetricScorer, MetricOnly
+from steelthread.utils.llm import LLMScorer, MetricOnly
 
 
 class OutputScoreCalculator:
@@ -121,7 +121,7 @@ class AssertionEvaluator:
         )
 
         if assertion.output_type == "llm_judge":
-            scorer = LLMMetricScorer(self.config)
+            scorer = LLMScorer(self.config)
             metrics = scorer.score(
                 task_data=[
                     f"Please score based on how well the output matches {assertion.value}",
