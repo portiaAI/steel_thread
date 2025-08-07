@@ -124,11 +124,10 @@ class StreamLogMetricBackend(StreamMetricsBackend):
         """Log metrics via pandas.
 
         Converts the metrics list into a DataFrame, expands tags into columns,
-        groups by stream_item, and prints average scores.
+        groups by stream_item and name, and prints average scores.
 
         Args:
             metrics (list[StreamMetric]): The metrics to log.
-
         """
         flattened = [m.model_dump() for m in metrics]
 
@@ -139,8 +138,8 @@ class StreamLogMetricBackend(StreamMetricsBackend):
         tags_df = dataframe["tags"].apply(pd.Series)
         dataframe = pd.concat([dataframe.drop(columns=["tags"]), tags_df], axis=1)
 
-        # Group by stream_item
-        avg_scores = dataframe.groupby("stream_item")["score"].mean().reset_index()
+        # Group by stream_item and metric name
+        avg_scores = dataframe.groupby(["stream_item", "name"])["score"].mean().reset_index()
 
         # Print
         print("\n=== Metric Averages by Stream Item ===")  # noqa: T201

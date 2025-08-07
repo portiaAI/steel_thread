@@ -5726,7 +5726,7 @@ wheels = [
 
 [[package]]
 name = "steel-thread"
-version = "0.1.5a0"
+version = "0.1.6a0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
