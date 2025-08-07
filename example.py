@@ -11,16 +11,19 @@ from portia import (
     Portia,
 )
 
-from steelthread.evals.default_evaluator import DefaultEvaluator
-from steelthread.evals.eval_runner import EvalConfig
-from steelthread.evals.evaluator import Evaluator, PlanRunMetadata
-from steelthread.evals.metrics import EvalMetric
-from steelthread.evals.models import EvalTestCase
+from steelthread.evals import (
+    DefaultEvaluator,
+    EvalConfig,
+    EvalMetric,
+    EvalTestCase,
+    Evaluator,
+    PlanRunMetadata,
+)
 from steelthread.portia.tools import ToolStubContext, ToolStubRegistry
 from steelthread.steelthread import (
     SteelThread,
 )
-from steelthread.streams.stream_processor import StreamConfig
+from steelthread.streams import StreamConfig
 
 # Requires:
 # OPENWEATHERMAP_API_KEY

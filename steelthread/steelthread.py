@@ -2,8 +2,8 @@
 
 from portia import Portia
 
-from steelthread.evals.eval_runner import EvalConfig, EvalRunner
-from steelthread.streams.stream_processor import StreamConfig, StreamProcessor
+from steelthread.evals import EvalConfig, EvalRunner
+from steelthread.streams import StreamConfig, StreamProcessor
 
 
 class SteelThread:
