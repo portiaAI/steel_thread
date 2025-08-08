@@ -86,7 +86,7 @@ def test_eval_runner_run_method(
         backend.save_eval_metrics.assert_called_once()  # type: ignore  # noqa: PGH003
 
 
-@patch("steelthread.evals.eval_runner.Portia")
+@patch("steelthread.evals.eval_runner.NoAuthPullPortia")
 @patch("steelthread.evals.eval_runner.ReadOnlyStorage")
 def test_evaluate_and_collect_metrics(
     mock_storage_cls: MagicMock,  # noqa: ARG001

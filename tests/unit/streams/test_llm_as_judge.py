@@ -7,22 +7,27 @@ import pytest
 from steelthread.streams.llm_as_judge import LLMJudgeEvaluator
 from steelthread.streams.metrics import StreamMetric
 from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
-from steelthread.utils.llm import MetricOnly
+from steelthread.utils.llm import MetricOnly, MetricOutput
 from tests.unit.utils import get_test_config, get_test_plan_run
 
 
 @pytest.fixture
-def mock_metrics() -> list[MetricOnly]:
+def mock_metrics() -> list[MetricOutput]:
     """Fixture for mocked LLM metrics."""
     return [
-        MetricOnly(score=0.9, name="test_metric", description="A test", explanation="Test passed.")
+        MetricOutput(
+            score=0.9,
+            name="test_metric",
+            description="A test",
+            explanation="Test passed.",
+        )
     ]
 
 
 @patch("steelthread.streams.llm_as_judge.LLMScorer")
 def test_process_plan_returns_metrics(
     mock_scorer_cls: MagicMock,
-    mock_metrics: list[MetricOnly],
+    mock_metrics: list[MetricOutput],
 ) -> None:
     """Test that process_plan returns scored metrics."""
     mock_scorer = MagicMock()
@@ -43,7 +48,7 @@ def test_process_plan_returns_metrics(
 @patch("steelthread.streams.llm_as_judge.LLMScorer")
 def test_process_plan_run_returns_metrics(
     mock_scorer_cls: MagicMock,
-    mock_metrics: list[MetricOnly],
+    mock_metrics: list[MetricOutput],
 ) -> None:
     """Test that process_plan_run returns scored metrics."""
     mock_scorer = MagicMock()

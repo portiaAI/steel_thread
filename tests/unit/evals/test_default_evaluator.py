@@ -12,12 +12,13 @@ from steelthread.evals.models import (
     EvalTestCase,
     FinalOutputAssertion,
     InputConfig,
+    LLMAsJudgeAssertion,
     LatencyAssertion,
     OutcomeAssertion,
     ToolCallAssertion,
     ToolCallsAssertion,
 )
-from steelthread.utils.llm import LLMScorer, MetricOnly
+from steelthread.utils.llm import LLMScorer, MetricOnly, MetricOutput
 from tests.unit.utils import get_test_config, get_test_plan_run
 
 
@@ -282,7 +283,7 @@ def test_final_output_llm_judge(
         )
     ]
 
-    mock_metric = MetricOnly(
+    mock_metric = MetricOutput(
         name="final_output",
         description="LLM-based final output score",
         score=0.8,
@@ -300,6 +301,52 @@ def test_final_output_llm_judge(
     assert m.score == 0.8
     assert m.expectation == "expected result"
     assert m.actual_value == "actual result"
+    assert m.description == "LLM-based final output score"
+    assert m.explanation == "LLM says it's close enough"
+
+    # Check LLMScorer was called correctly
+    mock_scorer_class.assert_called_once_with(config)  # type: ignore  # noqa: PGH003
+
+
+@patch("steelthread.evals.default_evaluator.LLMScorer")
+def test_llm_judge_assertion(
+    mock_scorer_class: LLMScorer, config: Config, test_case: EvalTestCase
+) -> None:
+    """Test outcomes."""
+    plan, plan_run = get_test_plan_run()
+    metadata = PlanRunMetadata(
+        tool_calls=[],
+        latency_ms=10,
+    )
+
+    # Fake output value
+    plan_run.outputs.final_output = LocalDataValue(value="actual result")
+
+    # Add LLM-based final_output assertion
+    test_case.assertions = [
+        LLMAsJudgeAssertion(
+            type="llm_as_judge",
+            value="expected result",
+        )
+    ]
+
+    mock_metric = MetricOutput(
+        name="llm_as_judge",
+        description="LLM-based final output score",
+        score=0.9,
+        explanation="LLM says it's close enough",
+    )
+    mock_scorer = mock_scorer_class.return_value  # type: ignore  # noqa: PGH003
+    mock_scorer.score.return_value = [mock_metric]
+
+    evaluator = DefaultEvaluator(config)
+    metrics = evaluator.eval_test_case(test_case, plan, plan_run, metadata)
+    assert metrics
+    assert len(metrics) == 1
+    m = metrics[0]
+    assert m.name == "llm_as_judge"
+    assert m.score == 0.9
+    assert m.expectation == "expected result"
     assert m.description == "LLM-based final output score"
     assert m.explanation == "LLM says it's close enough"
 

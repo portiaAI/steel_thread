@@ -168,7 +168,7 @@ class EvalRunner:
             tuple: The plan run output and latency in milliseconds.
 
         """
-        print(f"Executing test case: {tc.input_config.type} - {tc.input_config.value}")
+        print(f"Executing test case: {tc.input_config.type} - {tc.input_config.value}")  # noqa: T201
         start = time.perf_counter()
         if tc.input_config.type == "query":
             plan = portia.plan(
