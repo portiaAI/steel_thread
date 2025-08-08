@@ -26,7 +26,8 @@ def test_load_evals_pagination(mock_get_client: httpx.Client) -> None:
                 "assertions": [],
             }
         ],
-        "next": "/api/v0/evals/dataset-test-cases/?page=2",
+        "current_page": 1,
+        "total_pages": 2,
     }
 
     # Second page response
@@ -39,7 +40,8 @@ def test_load_evals_pagination(mock_get_client: httpx.Client) -> None:
                 "assertions": [],
             }
         ],
-        "next": None,
+        "current_page": 2,
+        "total_pages": 2,
     }
 
     # Mock client.get() response chain

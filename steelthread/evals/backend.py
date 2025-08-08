@@ -46,16 +46,20 @@ class PortiaBackend(BaseModel):
     def load_evals(self, dataset_name: str, run_id: str) -> list[EvalTestCase]:
         """Load test cases from the Portia API with pagination."""
         client = self.client()
-        url = f"/api/v0/evals/dataset-test-cases/?dataset_name={dataset_name}"
+        page = 1
+        url = f"/api/v0/evals/dataset-test-cases/?dataset_name={dataset_name}&page={page}"
         test_cases = []
 
-        while url:
+        while page:
             response = client.get(url)
             self.check_response(response)
             data = response.json()
             test_cases.extend(
                 EvalTestCase(**tc, testcase=tc["id"], run=run_id) for tc in data.get("results", [])
             )
-            url = data.get("next")
+            if data["current_page"] != data["total_pages"]:
+                page += 1
+            else:
+                page = None
 
         return test_cases

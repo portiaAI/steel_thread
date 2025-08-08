@@ -143,6 +143,7 @@ class StreamProcessor:
             stream.id,
             self.config.batch_size,
         )
+
         all_metrics: list[StreamMetric] = []
 
         futures = []

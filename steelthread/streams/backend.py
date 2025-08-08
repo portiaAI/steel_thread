@@ -74,23 +74,28 @@ class PortiaStreamBackend(BaseModel):
     def load_plan_stream_items(self, stream_id: str, batch_size: int) -> list[PlanStreamItem]:
         """Load stream items from the Portia API with pagination."""
         client = self.client()
-        url = f"/api/v0/evals/stream-items/?stream_id={stream_id}"
+        page = 1
+        url = f"/api/v0/evals/stream-items/?stream_id={stream_id}&page={page}"
         test_cases = []
 
-        while url and len(test_cases) < batch_size:
+        while page:
             response = client.get(url)
             self.check_response(response)
             data = response.json()
             for tc in data.get("results", []):
-                while len(test_cases) < batch_size:
-                    test_cases.append(
-                        PlanStreamItem(
-                            stream=stream_id,
-                            stream_item=tc["id"],
-                            plan=Plan(**tc["plan"]),
-                        )
+                if len(test_cases) == batch_size:
+                    return test_cases
+                test_cases.append(
+                    PlanStreamItem(
+                        stream=stream_id,
+                        stream_item=tc["id"],
+                        plan=Plan(**tc["plan"]),
                     )
-            url = data.get("next")
+                )
+            if data["current_page"] != data["total_pages"]:
+                page += 1
+            else:
+                page = None
 
         return test_cases
 
@@ -99,35 +104,39 @@ class PortiaStreamBackend(BaseModel):
     ) -> list[PlanRunStreamItem]:
         """Load stream items from the Portia API with pagination."""
         client = self.client()
-        url = f"/api/v0/evals/stream-items/?stream_id={stream_id}"
+        page = 1
+        url = f"/api/v0/evals/stream-items/?stream_id={stream_id}&page={page}"
         test_cases = []
-        while url and len(test_cases) < batch_size:
+        while page:
             response = client.get(url)
             self.check_response(response)
             data = response.json()
             for tc in data.get("results", []):
-                while len(test_cases) < batch_size:
-                    test_cases.append(
-                        PlanRunStreamItem(
-                            stream=stream_id,
-                            stream_item=tc["id"],
-                            plan=Plan.from_response(tc["plan"]),
-                            plan_run=PlanRun(
-                                id=PlanRunUUID.from_string(tc["plan_run"]["id"]),
-                                plan_id=PlanUUID.from_string(tc["plan_run"]["plan"]["id"]),
-                                end_user_id=tc["plan_run"]["end_user"],
-                                current_step_index=tc["plan_run"]["current_step_index"],
-                                state=PlanRunState(tc["plan_run"]["state"]),
-                                outputs=PlanRunOutputs.model_validate(tc["plan_run"]["outputs"]),
-                                plan_run_inputs={
-                                    key: LocalDataValue.model_validate(value)
-                                    for key, value in tc["plan_run"]["plan_run_inputs"].items()
-                                },
-                            ),
-                        )
+                if len(test_cases) == batch_size:
+                    return test_cases
+                test_cases.append(
+                    PlanRunStreamItem(
+                        stream=stream_id,
+                        stream_item=tc["id"],
+                        plan=Plan.from_response(tc["plan"]),
+                        plan_run=PlanRun(
+                            id=PlanRunUUID.from_string(tc["plan_run"]["id"]),
+                            plan_id=PlanUUID.from_string(tc["plan_run"]["plan"]["id"]),
+                            end_user_id=tc["plan_run"]["end_user"],
+                            current_step_index=tc["plan_run"]["current_step_index"],
+                            state=PlanRunState(tc["plan_run"]["state"]),
+                            outputs=PlanRunOutputs.model_validate(tc["plan_run"]["outputs"]),
+                            plan_run_inputs={
+                                key: LocalDataValue.model_validate(value)
+                                for key, value in tc["plan_run"]["plan_run_inputs"].items()
+                            },
+                        ),
                     )
-            url = data.get("next")
-
+                )
+            if data["current_page"] != data["total_pages"]:
+                page += 1
+            else:
+                page = None
         return test_cases
 
     def mark_processed(self, item: PlanStreamItem | PlanRunStreamItem) -> None:

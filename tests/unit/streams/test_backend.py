@@ -65,18 +65,49 @@ def test_load_plan_stream_items_pagination(
     mock_client_class: MagicMock, backend: PortiaStreamBackend
 ) -> None:
     """Test loading PlanStreamItems with pagination."""
+    plan = get_test_plan_run()[0]
+
+    page_1 = {
+        "results": [{"id": "item-1", "plan": plan.model_dump()}],
+        "current_page": 1,
+        "total_pages": 3,
+    }
+
+    # Second page response
+    page_2 = {
+        "results": [{"id": "item-2", "plan": plan.model_dump()}],
+        "current_page": 2,
+        "total_pages": 3,
+    }
+
+    page_3 = {
+        "results": [{"id": "item-3", "plan": plan.model_dump()}],
+        "current_page": 3,
+        "total_pages": 3,
+    }
+
     mock_client = MagicMock()
     mock_client_class.return_value.get_client.return_value = mock_client
+    mock_client.get.side_effect = [
+        MagicMock(is_success=True, json=MagicMock(return_value=page_1)),
+        MagicMock(is_success=True, json=MagicMock(return_value=page_2)),
+        MagicMock(is_success=True, json=MagicMock(return_value=page_3)),
+    ]
+    mock_client.return_value = mock_client  # type: ignore  # noqa: PGH003
 
-    plan = get_test_plan_run()[0]
-    fake_data = {
-        "results": [{"id": "item-1", "plan": plan.model_dump()}],
-        "next": None,
-    }
-    mock_client.get.return_value = make_mock_response(fake_data)
+    items = backend.load_plan_stream_items("stream-123", batch_size=2)
+    assert len(items) == 2
+    assert isinstance(items[0], PlanStreamItem)
 
-    items = backend.load_plan_stream_items("stream-123", batch_size=1)
-    assert len(items) == 1
+    mock_client.get.side_effect = [
+        MagicMock(is_success=True, json=MagicMock(return_value=page_1)),
+        MagicMock(is_success=True, json=MagicMock(return_value=page_2)),
+        MagicMock(is_success=True, json=MagicMock(return_value=page_3)),
+    ]
+    mock_client.return_value = mock_client  # type: ignore  # noqa: PGH003
+
+    items = backend.load_plan_stream_items("stream-123", batch_size=3)
+    assert len(items) == 3
     assert isinstance(items[0], PlanStreamItem)
 
 
@@ -89,7 +120,7 @@ def test_load_plan_run_stream_items(
     mock_client_class.return_value.get_client.return_value = mock_client
 
     plan, plan_run = get_test_plan_run()
-    fake_data = {
+    page_1 = {
         "results": [
             {
                 "id": "item-1",
@@ -119,12 +150,95 @@ def test_load_plan_run_stream_items(
                 },
             }
         ],
-        "next": None,
+        "current_page": 1,
+        "total_pages": 3,
     }
-    mock_client.get.return_value = make_mock_response(fake_data)
+    page_2 = {
+        "results": [
+            {
+                "id": "item-2",
+                "plan": {
+                    "id": str(plan_run.plan_id),
+                    "query": plan.plan_context.query,
+                    "tool_ids": plan.plan_context.tool_ids,
+                    "steps": [s.model_dump() for s in plan.steps],
+                    "plan_inputs": plan.plan_inputs,
+                },
+                "plan_run": {
+                    "id": str(plan_run.id),
+                    "plan": {
+                        "id": str(plan_run.plan_id),
+                        "query": plan.plan_context.query,
+                        "tool_ids": plan.plan_context.tool_ids,
+                        "steps": [s.model_dump() for s in plan.steps],
+                        "plan_inputs": plan.plan_inputs,
+                    },
+                    "end_user": plan_run.end_user_id,
+                    "current_step_index": plan_run.current_step_index,
+                    "state": plan_run.state.value,
+                    "outputs": plan_run.outputs.model_dump(),
+                    "plan_run_inputs": {
+                        k: v.model_dump() for k, v in plan_run.plan_run_inputs.items()
+                    },
+                },
+            }
+        ],
+        "current_page": 2,
+        "total_pages": 3,
+    }
+    page_3 = {
+        "results": [
+            {
+                "id": "item-2",
+                "plan": {
+                    "id": str(plan_run.plan_id),
+                    "query": plan.plan_context.query,
+                    "tool_ids": plan.plan_context.tool_ids,
+                    "steps": [s.model_dump() for s in plan.steps],
+                    "plan_inputs": plan.plan_inputs,
+                },
+                "plan_run": {
+                    "id": str(plan_run.id),
+                    "plan": {
+                        "id": str(plan_run.plan_id),
+                        "query": plan.plan_context.query,
+                        "tool_ids": plan.plan_context.tool_ids,
+                        "steps": [s.model_dump() for s in plan.steps],
+                        "plan_inputs": plan.plan_inputs,
+                    },
+                    "end_user": plan_run.end_user_id,
+                    "current_step_index": plan_run.current_step_index,
+                    "state": plan_run.state.value,
+                    "outputs": plan_run.outputs.model_dump(),
+                    "plan_run_inputs": {
+                        k: v.model_dump() for k, v in plan_run.plan_run_inputs.items()
+                    },
+                },
+            }
+        ],
+        "current_page": 3,
+        "total_pages": 3,
+    }
+    mock_client.get.side_effect = [
+        MagicMock(is_success=True, json=MagicMock(return_value=page_1)),
+        MagicMock(is_success=True, json=MagicMock(return_value=page_2)),
+        MagicMock(is_success=True, json=MagicMock(return_value=page_3)),
+    ]
+    mock_client.return_value = mock_client  # type: ignore  # noqa: PGH003
 
-    items = backend.load_plan_run_stream_items("stream-123", batch_size=1)
-    assert len(items) == 1
+    items = backend.load_plan_run_stream_items("stream-123", batch_size=2)
+    assert len(items) == 2
+    assert isinstance(items[0], PlanRunStreamItem)
+
+    mock_client.get.side_effect = [
+        MagicMock(is_success=True, json=MagicMock(return_value=page_1)),
+        MagicMock(is_success=True, json=MagicMock(return_value=page_2)),
+        MagicMock(is_success=True, json=MagicMock(return_value=page_3)),
+    ]
+    mock_client.return_value = mock_client  # type: ignore  # noqa: PGH003
+
+    items = backend.load_plan_run_stream_items("stream-123", batch_size=3)
+    assert len(items) == 3
     assert isinstance(items[0], PlanRunStreamItem)
 
 
