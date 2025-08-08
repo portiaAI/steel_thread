@@ -12,13 +12,13 @@ from steelthread.evals.models import (
     EvalTestCase,
     FinalOutputAssertion,
     InputConfig,
-    LLMAsJudgeAssertion,
     LatencyAssertion,
+    LLMAsJudgeAssertion,
     OutcomeAssertion,
     ToolCallAssertion,
     ToolCallsAssertion,
 )
-from steelthread.utils.llm import LLMScorer, MetricOnly, MetricOutput
+from steelthread.utils.llm import LLMScorer, MetricOutput
 from tests.unit.utils import get_test_config, get_test_plan_run
 
 

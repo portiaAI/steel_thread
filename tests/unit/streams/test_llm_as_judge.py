@@ -7,7 +7,7 @@ import pytest
 from steelthread.streams.llm_as_judge import LLMJudgeEvaluator
 from steelthread.streams.metrics import StreamMetric
 from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem
-from steelthread.utils.llm import MetricOnly, MetricOutput
+from steelthread.utils.llm import MetricOutput
 from tests.unit.utils import get_test_config, get_test_plan_run
 
 
