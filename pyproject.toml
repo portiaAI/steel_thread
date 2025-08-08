@@ -29,7 +29,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://www.portialabs.ai/"
-Repository = "https://github.com/portiaAI/portia-sdk-python"
+Repository = "https://github.com/portiaAI/steel_thread"
 Documentation = "https://docs.portialabs.ai"
 
 

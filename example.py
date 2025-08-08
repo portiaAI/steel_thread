@@ -133,3 +133,24 @@ st.run_evals(
         evaluators=[DefaultEvaluator(config), EmojiEvaluator(config)],
     ),
 )
+
+
+from portia import Plan, PlanRun
+
+from steelthread.evals import EvalMetric, EvalTestCase, Evaluator, PlanRunMetadata
+
+
+class MyEvaluator(Evaluator):
+    def eval_test_case(
+        self,
+        test_case: EvalTestCase,
+        final_plan: Plan,
+        final_plan_run: PlanRun,
+        additional_data: PlanRunMetadata,
+    ) -> list[EvalMetric] | EvalMetric | None:
+        return EvalMetric.from_test_case(
+            test_case=test_case,
+            name="custom",
+            score=1.0,
+            description="Always passes!",
+        )
