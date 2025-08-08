@@ -10,6 +10,7 @@ from steelthread.evals.models import (
     EvalTestCase,
     FinalOutputAssertion,
     LatencyAssertion,
+    LLMAsJudgeAssertion,
     OutcomeAssertion,
     ToolCallsAssertion,
 )
@@ -89,10 +90,38 @@ class AssertionEvaluator:
                 return [self._evaluate_latency(assertion)]
             case "tool_calls":
                 return [self._evaluate_tool_calls(assertion)]
+            case "llm_as_judge":
+                return self._evaluate_llm_judge(assertion)
             case "custom":
                 return []
             case _:
                 raise ValueError(f"Unsupported assertion type: {assertion.type}")
+
+    def _evaluate_llm_judge(self, assertion: LLMAsJudgeAssertion) -> list[EvalMetric]:
+        scorer = LLMScorer(self.config)
+        metrics = scorer.score(
+            task_data=[
+                f"Please score the given plan run based on these rules. Rules:{assertion.value}",
+                self.plan_run.model_dump_json(),
+            ],
+            metrics_to_score=[
+                MetricOnly(
+                    name=assertion.type,
+                    description="LLM-based score",
+                )
+            ],
+        )
+        return [
+            EvalMetric.from_test_case(
+                test_case=self.test_case,
+                score=m.score,
+                name=m.name,
+                expectation=assertion.value,
+                description=m.description,
+                explanation=m.explanation,
+            )
+            for m in metrics
+        ]
 
     def _evaluate_outcome(self, assertion: OutcomeAssertion) -> EvalMetric:
         """Evaluate the final state of the plan run."""
@@ -100,10 +129,8 @@ class AssertionEvaluator:
         actual_value = self.plan_run.state.lower()
 
         score = 1 if assertion_value == actual_value else 0
-        return EvalMetric(
-            dataset=self.test_case.dataset,
-            testcase=self.test_case.testcase,
-            run=self.test_case.run,
+        return EvalMetric.from_test_case(
+            test_case=self.test_case,
             score=score,
             name=assertion.type,
             expectation=assertion_value,
@@ -131,15 +158,12 @@ class AssertionEvaluator:
                     MetricOnly(
                         name=assertion.type,
                         description="LLM-based final output score",
-                        score=0,
                     )
                 ],
             )
             return [
-                EvalMetric(
-                    dataset=self.test_case.dataset,
-                    testcase=self.test_case.testcase,
-                    run=self.test_case.run,
+                EvalMetric.from_test_case(
+                    test_case=self.test_case,
                     score=m.score,
                     name=m.name,
                     expectation=assertion_value,
@@ -152,10 +176,8 @@ class AssertionEvaluator:
 
         score = OutputScoreCalculator.calculate(self.plan_run.outputs.final_output, assertion)
         return [
-            EvalMetric(
-                dataset=self.test_case.dataset,
-                testcase=self.test_case.testcase,
-                run=self.test_case.run,
+            EvalMetric.from_test_case(
+                test_case=self.test_case,
                 score=score,
                 name=assertion.type,
                 expectation=assertion_value,
@@ -169,10 +191,8 @@ class AssertionEvaluator:
         actual = self.metadata.latency_ms
         target = assertion.threshold_ms
         score = 1 - (abs(target - actual) / max(abs(target), abs(actual), 1e-8))
-        return EvalMetric(
-            dataset=self.test_case.dataset,
-            testcase=self.test_case.testcase,
-            run=self.test_case.run,
+        return EvalMetric.from_test_case(
+            test_case=self.test_case,
             score=score,
             name=assertion.type,
             expectation=str(target),
@@ -200,10 +220,8 @@ class AssertionEvaluator:
         else:
             score = 0.0
 
-        return EvalMetric(
-            dataset=self.test_case.dataset,
-            testcase=self.test_case.testcase,
-            run=self.test_case.run,
+        return EvalMetric.from_test_case(
+            test_case=self.test_case,
             score=score,
             name=assertion.type,
             expectation=[

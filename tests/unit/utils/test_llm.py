@@ -6,16 +6,22 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from portia import Message
 
-from steelthread.utils.llm import (
-    LLMScorer,
-    MetricOnly,
-    MetricOnlyList,
-)
+from steelthread.utils.llm import LLMScorer, MetricOnly, MetricOutput, MetricOutputList
 
 
 def test_metric_only_valid() -> None:
     """Test metric only."""
     metric = MetricOnly(
+        name="accuracy",
+        description="Measures how accurate the output is.",
+    )
+
+    assert metric.name == "accuracy"
+
+
+def test_metric_output_valid() -> None:
+    """Test metric only."""
+    metric = MetricOutput(
         score=0.8,
         name="accuracy",
         description="Measures how accurate the output is.",
@@ -28,7 +34,7 @@ def test_metric_only_valid() -> None:
 def test_metric_only_invalid_explanation() -> None:
     """Test invalid explanation."""
     with pytest.raises(ValueError, match="explanation must be at least 10 characters"):
-        MetricOnly(
+        MetricOutput(
             score=0.8,
             name="accuracy",
             description="Measures accuracy",
@@ -36,29 +42,18 @@ def test_metric_only_invalid_explanation() -> None:
         )
 
 
-def test_metric_only_allows_none_explanation() -> None:
-    """Test none explanation."""
-    metric = MetricOnly(
-        score=1.0,
-        name="completeness",
-        description="Measures if all parts are included",
-        explanation=None,
-    )
-    assert metric.explanation is None
-
-
 def test_metric_only_list() -> None:
     """Test metric only list."""
-    m1 = MetricOnly(
+    m1 = MetricOutput(
         score=0.9,
         name="clarity",
         description="Clear writing",
         explanation="Very clear and concise.",
     )
-    m2 = MetricOnly(
+    m2 = MetricOutput(
         score=0.7, name="depth", description="In-depth analysis", explanation="Covers most points."
     )
-    metrics_list = MetricOnlyList(metrics=[m1, m2])
+    metrics_list = MetricOutputList(metrics=[m1, m2])
     assert len(metrics_list.metrics) == 2
 
 
@@ -66,14 +61,14 @@ def test_llm_metric_scorer_score(monkeypatch: MonkeyPatch) -> None:  # noqa: ARG
     """Test metric scorer."""
     # Create mock response from the model
     mock_metrics = [
-        MetricOnly(
+        MetricOutput(
             score=0.95,
             name="coherence",
             description="Measures logical flow",
             explanation="The output was logically consistent throughout.",
         )
     ]
-    mock_response = MetricOnlyList(metrics=mock_metrics)
+    mock_response = MetricOutputList(metrics=mock_metrics)
 
     mock_model = MagicMock()
     mock_model.get_structured_response.return_value = mock_response
@@ -86,7 +81,8 @@ def test_llm_metric_scorer_score(monkeypatch: MonkeyPatch) -> None:  # noqa: ARG
     task_data = ["Step 1: Do X", "Step 2: Do Y"]
     metrics_to_score = [
         MetricOnly(
-            score=0.0, name="coherence", description="Measures logical flow", explanation=None
+            name="coherence",
+            description="Measures logical flow",
         )
     ]
 
@@ -101,4 +97,4 @@ def test_llm_metric_scorer_score(monkeypatch: MonkeyPatch) -> None:  # noqa: ARG
     messages, model_type = called_args
     assert isinstance(messages, list)
     assert isinstance(messages[0], Message)
-    assert model_type == MetricOnlyList
+    assert model_type == MetricOutputList

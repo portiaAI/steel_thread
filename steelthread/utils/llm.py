@@ -7,6 +7,19 @@ MIN_EXPLANATION_LENGTH = 10
 
 
 class MetricOnly(BaseModel):
+    """An input to the LLM scorer.
+
+    Attributes:
+        name (str): The name of the metric.
+        description (str): A human-readable description of the metric.
+
+    """
+
+    name: str
+    description: str
+
+
+class MetricOutput(BaseModel):
     """A single record of an observation.
 
     Attributes:
@@ -19,9 +32,7 @@ class MetricOnly(BaseModel):
     score: float
     name: str
     description: str
-    explanation: str | None = Field(
-        default=None, description="An optional explanation of the score."
-    )
+    explanation: str = Field(description="A required explanation of the score.")
 
     @field_validator("explanation")
     @classmethod
@@ -32,10 +43,10 @@ class MetricOnly(BaseModel):
         return v
 
 
-class MetricOnlyList(BaseModel):
+class MetricOutputList(BaseModel):
     """A list of metrics."""
 
-    metrics: list[MetricOnly]
+    metrics: list[MetricOutput]
 
 
 class LLMScorer:
@@ -66,7 +77,7 @@ class LLMScorer:
         self,
         task_data: list[str],
         metrics_to_score: list[MetricOnly],
-    ) -> list[MetricOnly]:
+    ) -> list[MetricOutput]:
         """Scores the given metrics based on the task data.
 
         Constructs a prompt using the base prompt, metrics, and task data,
@@ -96,7 +107,7 @@ class LLMScorer:
 
         metrics = (
             self.config.get_default_model()
-            .get_structured_response(messages, MetricOnlyList)
+            .get_structured_response(messages, MetricOutputList)
             .metrics
         )
         class_name = self.__class__.__name__

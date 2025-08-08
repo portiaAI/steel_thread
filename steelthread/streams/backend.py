@@ -101,7 +101,6 @@ class PortiaStreamBackend(BaseModel):
         client = self.client()
         url = f"/api/v0/evals/stream-items/?stream_id={stream_id}"
         test_cases = []
-
         while url and len(test_cases) < batch_size:
             response = client.get(url)
             self.check_response(response)

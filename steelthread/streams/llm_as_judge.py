@@ -43,17 +43,14 @@ class LLMJudgeEvaluator(StreamEvaluator):
                 MetricOnly(
                     name="correctness",
                     description="Are the steps logically sound and valid?",
-                    score=0,
                 ),
                 MetricOnly(
                     name="completeness",
                     description="Are all necessary steps included?",
-                    score=0,
                 ),
                 MetricOnly(
                     name="clearness",
                     description="Are the steps clearly explained?",
-                    score=0,
                 ),
             ],
         )
@@ -89,12 +86,10 @@ class LLMJudgeEvaluator(StreamEvaluator):
                 MetricOnly(
                     name="success",
                     description="Did it accomplish the intended goal?",
-                    score=0,
                 ),
                 MetricOnly(
                     name="efficiency",
                     description="Were the steps necessary and minimal?",
-                    score=0,
                 ),
             ],
         )
