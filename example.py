@@ -84,7 +84,7 @@ class EmojiEvaluator(Evaluator):
         emojis = emoji_pattern.findall(string_to_score)
         emoji_count = len(emojis)
 
-        expected_emojis = test_case.get_custom_assertion("expected_emojis") or 2
+        expected_emojis = int(test_case.get_custom_assertion("expected_emojis") or 2)
 
         score = min(emoji_count / int(expected_emojis), 1.0)  # 0.0 to 1.0 scale
 
