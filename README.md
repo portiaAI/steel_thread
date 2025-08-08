@@ -77,7 +77,8 @@ from steelthread.evals.evaluator import Evaluator
 from steelthread.metrics.metric import Metric
 
 class EmojiEvaluator(Evaluator):
-    def eval_test_case(self,  
+    def eval_test_case(
+        self,  
         test_case: EvalTestCase,
         final_plan: Plan,
         final_plan_run: PlanRun,
