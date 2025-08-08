@@ -18,6 +18,7 @@ from steelthread.evals.metrics import (
 )
 from steelthread.evals.models import EvalTestCase
 from steelthread.evals.tags import EvalMetricTagger
+from steelthread.portia.portia import NoAuthPullPortia
 from steelthread.portia.storage import ReadOnlyStorage
 from steelthread.portia.tools import ToolStubRegistry
 
@@ -94,7 +95,7 @@ class EvalRunner:
         tool_registry = ToolStubRegistry(inner_registry, stubs={})
 
         # Patch a local Portia with the test-specific tool registry
-        portia = Portia(config=self.config.portia_config, tools=tool_registry)
+        portia = NoAuthPullPortia(config=self.config.portia_config, tools=tool_registry)
         portia.storage = ReadOnlyStorage(portia.storage)  # type: ignore  # noqa: PGH003
 
         # Run the test case
@@ -167,6 +168,7 @@ class EvalRunner:
             tuple: The plan run output and latency in milliseconds.
 
         """
+        print(f"Executing test case: {tc.input_config.type} - {tc.input_config.value}")
         start = time.perf_counter()
         if tc.input_config.type == "query":
             plan = portia.plan(

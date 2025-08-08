@@ -119,6 +119,9 @@ class PortiaEvalMetricsBackend(MetricsBackend):
 
     def save_eval_metrics(self, metrics: list[EvalMetric]) -> None:
         """Send metrics to the Portia API for a given eval run."""
+        for m in metrics:
+            print(m, "\n")
+
         payload = [m.model_dump() for m in metrics]
         client = self.client()
         response = client.post("/api/v0/evals/eval-metrics/", json=payload)

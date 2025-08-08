@@ -87,6 +87,19 @@ class LatencyAssertion(BaseModel):
     threshold_ms: float
 
 
+class LLMAsJudgeAssertion(BaseModel):
+    """Assertion for general LLM as judge.
+
+    Attributes:
+        type (Literal["llm_as_judge"]): Discriminator for the assertion type.
+        value (str): Expected final output value.
+
+    """
+
+    type: Literal["llm_as_judge"]
+    value: str
+
+
 class CustomAssertion(BaseModel):
     """User-defined assertion with arbitrary key-value metadata.
 
@@ -106,6 +119,7 @@ Assertion = Annotated[
     | FinalOutputAssertion
     | ToolCallsAssertion
     | LatencyAssertion
+    | LLMAsJudgeAssertion
     | CustomAssertion,
     Field(discriminator="type"),
 ]
