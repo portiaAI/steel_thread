@@ -63,6 +63,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"example.py" = ["ALL"]
 "**/tests/*" = [
   "S101",    # Disables check for asserts. Asserts in test cases can be useful.
   "PLR2004", # Disables magic number checks. Its normal to assert using magic numbers for things like array length.

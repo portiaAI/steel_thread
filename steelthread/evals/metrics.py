@@ -42,7 +42,7 @@ class EvalMetric(BaseModel):
     actual_value: str | list[str] | dict[str, str] | None
     eval_output: PlanRun | Plan | None = Field(
         default=None,
-        description="The output of the eval run. This is the plan run or plan that was used to generate the metric.",
+        description="The Plan or PlanRun that was used to generate the metric.",
     )
     explanation: str | None = Field(default="", description="An optional explanation of the score.")
     tags: dict[str, str] = Field(default={})
