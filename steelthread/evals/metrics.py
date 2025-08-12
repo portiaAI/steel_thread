@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 import httpx
 import pandas as pd
 from portia.config import Config
+from portia.plan import Plan
+from portia.plan_run import PlanRun
 from portia.storage import PortiaCloudClient
 from pydantic import BaseModel, Field, field_validator
 
@@ -38,6 +40,10 @@ class EvalMetric(BaseModel):
     description: str
     expectation: str | list[str] | dict[str, str] | None
     actual_value: str | list[str] | dict[str, str] | None
+    eval_output: PlanRun | Plan | None = Field(
+        default=None,
+        description="The output of the eval run. This is the plan run or plan that was used to generate the metric.",
+    )
     explanation: str | None = Field(default="", description="An optional explanation of the score.")
     tags: dict[str, str] = Field(default={})
 
@@ -59,6 +65,7 @@ class EvalMetric(BaseModel):
         explanation: str | None = None,
         expectation: str | list[str] | dict[str, str] | None = None,
         actual_value: str | list[str] | dict[str, str] | None = None,
+        eval_output: PlanRun | Plan | None = None,
     ) -> "EvalMetric":
         """Create a metric from a test case.
 
@@ -70,7 +77,7 @@ class EvalMetric(BaseModel):
             explanation (str | None): An optional explanation of the score.
             expectation (str | list[str] | dict[str, str] | None): expected value
             actual_value (str | list[str] | dict[str, str] | None): actual value
-
+            eval_output (PlanRun | Plan | None): The output of the eval run.
 
         """
         return cls(
@@ -82,6 +89,7 @@ class EvalMetric(BaseModel):
             description=description,
             explanation=explanation,
             actual_value=actual_value,
+            eval_output=eval_output,
             expectation=expectation,
         )
 

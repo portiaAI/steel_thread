@@ -119,6 +119,7 @@ class AssertionEvaluator:
                 expectation=assertion.value,
                 description=m.description,
                 explanation=m.explanation,
+                eval_output=self.plan_run,
             )
             for m in metrics
         ]
@@ -136,6 +137,7 @@ class AssertionEvaluator:
             expectation=assertion_value,
             actual_value=actual_value,
             description="Whether the outcome exactly matches expected value",
+            eval_output=self.plan_run,
         )
 
     def _evaluate_final_output(self, assertion: FinalOutputAssertion) -> list[EvalMetric]:
@@ -170,6 +172,7 @@ class AssertionEvaluator:
                     actual_value=actual_value,
                     description=m.description,
                     explanation=m.explanation,
+                    eval_output=self.plan_run,
                 )
                 for m in metrics
             ]
@@ -183,6 +186,7 @@ class AssertionEvaluator:
                 expectation=assertion_value,
                 actual_value=actual_value,
                 description="Exact or partial final output match",
+                eval_output=self.plan_run,
             )
         ]
 
@@ -229,6 +233,7 @@ class AssertionEvaluator:
             ],
             actual_value=[tc.tool_name for tc in self.metadata.tool_calls],
             description="Tool call usage score",
+            eval_output=self.plan_run,
         )
 
 
