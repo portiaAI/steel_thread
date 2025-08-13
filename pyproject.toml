@@ -1,6 +1,6 @@
 [project]
 name = "steel-thread"
-version = "0.1.12"
+version = "0.1.13"
 description = "Portia Labs Eval framework for evaluating agentic workflows."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -14,7 +14,7 @@ classifiers = ["Development Status :: 3 - Alpha"]
 
 dependencies = [
     "httpx>=0.28.1",
-    "portia-sdk-python[all]>=0.5.0",
+    "portia-sdk-python[all]>=0.6.0",
     "pydantic>=2.11.7",
 ]
 
