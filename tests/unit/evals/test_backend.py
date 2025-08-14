@@ -10,8 +10,8 @@ from steelthread.evals.models import EvalTestCase
 from tests.unit.utils import get_test_config
 
 
-@patch("steelthread.evals.backend.PortiaCloudClient.get_client")
-def test_load_evals_pagination(mock_get_client: httpx.Client) -> None:
+@patch("steelthread.evals.backend.PortiaCloudClient.new_client")
+def test_load_evals_pagination(mock_new_client: httpx.Client) -> None:
     """Test loading paginated test cases from the Portia API."""
     config = get_test_config()
     backend = PortiaBackend(config=config)
@@ -50,7 +50,7 @@ def test_load_evals_pagination(mock_get_client: httpx.Client) -> None:
         MagicMock(is_success=True, json=MagicMock(return_value=page_1)),
         MagicMock(is_success=True, json=MagicMock(return_value=page_2)),
     ]
-    mock_get_client.return_value = mock_client  # type: ignore  # noqa: PGH003
+    mock_new_client.return_value = mock_client  # type: ignore  # noqa: PGH003
 
     test_cases = backend.load_evals(dataset_name="myset", run_id="run-123")
 
@@ -63,7 +63,7 @@ def test_load_evals_pagination(mock_get_client: httpx.Client) -> None:
 
     # Ensure pagination happened
     assert mock_client.get.call_count == 2
-    mock_get_client.assert_called_once_with(config)  # type: ignore  # noqa: PGH003
+    mock_new_client.assert_called_once_with(config)  # type: ignore  # noqa: PGH003
 
 
 def test_check_response_raises_on_error() -> None:

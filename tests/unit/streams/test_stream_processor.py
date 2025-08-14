@@ -1,5 +1,6 @@
 """Test stream processor."""
 
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -15,7 +16,7 @@ def test_stream_config_defaults() -> None:
     config = get_test_config()
     stream_config = StreamConfig(stream_name="s", config=config)
     assert stream_config.max_concurrency == 5
-    assert stream_config.batch_size == 10
+    assert stream_config.batch_size == sys.maxsize
     assert len(stream_config.evaluators) == 1
     assert len(stream_config.metrics_backends) == 2
 

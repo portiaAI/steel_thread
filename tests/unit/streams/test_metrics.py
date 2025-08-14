@@ -80,7 +80,7 @@ def test_portia_stream_metrics_backend_success(mock_client_class: MagicMock) -> 
         request=Request("POST", "https://fake.url/api/v0/evals/stream-metrics/"),
     )
     mock_client.post.return_value = mock_response
-    mock_client_class.return_value.get_client.return_value = mock_client
+    mock_client_class.return_value.new_client.return_value = mock_client
 
     backend.save_metrics([metric])
     mock_client.post.assert_called_once()
@@ -108,7 +108,7 @@ def test_portia_stream_metrics_backend_failure(mock_client_class: MagicMock) -> 
         request=Request("POST", "https://fake.url"),
     )
     mock_client.post.return_value = mock_response
-    mock_client_class.return_value.get_client.return_value = mock_client
+    mock_client_class.return_value.new_client.return_value = mock_client
 
     with pytest.raises(ValueError, match="Portia API error: 400"):
         backend.save_metrics([metric])

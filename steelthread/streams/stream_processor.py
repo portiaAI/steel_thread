@@ -1,5 +1,6 @@
 """Stream Processor for steel thread."""
 
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from portia import Config
@@ -65,7 +66,7 @@ class StreamConfig:
             PortiaStreamMetricsBackend(config),
         ]
         self.max_concurrency = max_concurrency or 5
-        self.batch_size = batch_size or 10
+        self.batch_size = batch_size or sys.maxsize
 
 
 class StreamProcessor:

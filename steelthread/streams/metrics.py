@@ -98,7 +98,7 @@ class PortiaStreamMetricsBackend(StreamMetricsBackend):
 
     def client(self) -> httpx.Client:
         """Return an authenticated HTTP client."""
-        return PortiaCloudClient().get_client(self.config)
+        return PortiaCloudClient().new_client(self.config)
 
     def check_response(self, response: httpx.Response) -> None:
         """Raise if response is not successful."""
