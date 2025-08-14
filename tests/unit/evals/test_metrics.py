@@ -99,7 +99,7 @@ def test_portia_eval_metrics_backend_success(mock_client_class: MagicMock) -> No
         request=Request("POST", "https://api.fake/"),
     )
     mock_client.post.return_value = mock_response
-    mock_client_class.return_value.get_client.return_value = mock_client
+    mock_client_class.return_value.new_client.return_value = mock_client
 
     backend.save_eval_metrics([metric])
     mock_client.post.assert_called_once()
@@ -133,7 +133,7 @@ def test_portia_eval_metrics_backend_failure(mock_client_class: MagicMock) -> No
         request=Request("POST", "https://api.fake/"),
     )
     mock_client.post.return_value = mock_response
-    mock_client_class.return_value.get_client.return_value = mock_client
+    mock_client_class.return_value.new_client.return_value = mock_client
 
     with pytest.raises(ValueError, match="Portia API error: 500"):
         backend.save_eval_metrics([metric])

@@ -27,7 +27,7 @@ class PortiaBackend(BaseModel):
             httpx.Client: A configured HTTP client.
 
         """
-        return PortiaCloudClient().get_client(self.config)
+        return PortiaCloudClient().new_client(self.config)
 
     def check_response(self, response: httpx.Response) -> None:
         """Validate the response from Portia API.
@@ -47,10 +47,11 @@ class PortiaBackend(BaseModel):
         """Load test cases from the Portia API with pagination."""
         client = self.client()
         page = 1
-        url = f"/api/v0/evals/dataset-test-cases/?dataset_name={dataset_name}&page={page}"
+        base_url = "/api/v0/evals/dataset-test-cases/?dataset_name={dataset_name}&page={page}"
         test_cases = []
 
         while page:
+            url = base_url.format(dataset_name=dataset_name, page=page)
             response = client.get(url)
             self.check_response(response)
             data = response.json()

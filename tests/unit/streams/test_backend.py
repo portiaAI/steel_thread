@@ -42,7 +42,7 @@ def test_get_stream_success(mock_client_class: MagicMock, backend: PortiaStreamB
         }
     )
     mock_client.get.return_value = mock_response
-    mock_client_class.return_value.get_client.return_value = mock_client
+    mock_client_class.return_value.new_client.return_value = mock_client
 
     stream = backend.get_stream("my-stream")
     assert isinstance(stream, Stream)
@@ -87,7 +87,7 @@ def test_load_plan_stream_items_pagination(
     }
 
     mock_client = MagicMock()
-    mock_client_class.return_value.get_client.return_value = mock_client
+    mock_client_class.return_value.new_client.return_value = mock_client
     mock_client.get.side_effect = [
         MagicMock(is_success=True, json=MagicMock(return_value=page_1)),
         MagicMock(is_success=True, json=MagicMock(return_value=page_2)),
@@ -117,7 +117,7 @@ def test_load_plan_run_stream_items(
 ) -> None:
     """Test loading PlanRunStreamItems."""
     mock_client = MagicMock()
-    mock_client_class.return_value.get_client.return_value = mock_client
+    mock_client_class.return_value.new_client.return_value = mock_client
 
     plan, plan_run = get_test_plan_run()
     page_1 = {
@@ -248,7 +248,7 @@ def test_mark_processed_calls_patch(
 ) -> None:
     """Test mark_processed makes a PATCH request."""
     mock_client = MagicMock()
-    mock_client_class.return_value.get_client.return_value = mock_client
+    mock_client_class.return_value.new_client.return_value = mock_client
     mock_response = make_mock_response({}, 200)
     mock_client.patch.return_value = mock_response
 
@@ -258,3 +258,31 @@ def test_mark_processed_calls_patch(
 
     mock_client.patch.assert_called_once()
     assert mock_client.patch.call_args[1]["json"]["id"] == "item-456"
+
+
+@patch("steelthread.streams.backend.PortiaCloudClient")
+def test_load_plan_run_stream_items_no_results(
+    mock_client_class: MagicMock, backend: PortiaStreamBackend
+) -> None:
+    """Test load_plan_stream_items returns empty list if no results."""
+    mock_client = MagicMock()
+    mock_client_class.return_value.new_client.return_value = mock_client
+    mock_response = make_mock_response({"results": []}, 200)
+    mock_client.get.return_value = mock_response
+
+    items = backend.load_plan_run_stream_items("stream-123", batch_size=2)
+    assert len(items) == 0
+
+
+@patch("steelthread.streams.backend.PortiaCloudClient")
+def test_load_plan_stream_items_items_no_results(
+    mock_client_class: MagicMock, backend: PortiaStreamBackend
+) -> None:
+    """Test load_plan_stream_items returns empty list if no results."""
+    mock_client = MagicMock()
+    mock_client_class.return_value.new_client.return_value = mock_client
+    mock_response = make_mock_response({"results": []}, 200)
+    mock_client.get.return_value = mock_response
+
+    items = backend.load_plan_stream_items("stream-123", batch_size=2)
+    assert len(items) == 0

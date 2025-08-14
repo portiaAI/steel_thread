@@ -1,21 +1,29 @@
 """Test backend."""
 
-from unittest.mock import MagicMock, patch
-
 import httpx
 import pytest
+from portia import Config
+from pytest_httpx import HTTPXMock
 
 from steelthread.evals.backend import PortiaBackend
 from steelthread.evals.models import EvalTestCase
 from tests.unit.utils import get_test_config
 
 
-@patch("steelthread.evals.backend.PortiaCloudClient.get_client")
-def test_load_evals_pagination(mock_get_client: httpx.Client) -> None:
-    """Test loading paginated test cases from the Portia API."""
-    config = get_test_config()
-    backend = PortiaBackend(config=config)
+@pytest.fixture
+def config() -> Config:
+    """Fixture for a Portia config."""
+    return get_test_config()
 
+
+@pytest.fixture
+def backend(config: Config) -> PortiaBackend:
+    """Fixture for a PortiaBackend."""
+    return PortiaBackend(config=config)
+
+
+def test_load_evals_pagination(backend: PortiaBackend, httpx_mock: HTTPXMock) -> None:
+    """Test loading paginated test cases from the Portia API."""
     # First page response
     page_1 = {
         "results": [
@@ -44,13 +52,17 @@ def test_load_evals_pagination(mock_get_client: httpx.Client) -> None:
         "total_pages": 2,
     }
 
-    # Mock client.get() response chain
-    mock_client = MagicMock()
-    mock_client.get.side_effect = [
-        MagicMock(is_success=True, json=MagicMock(return_value=page_1)),
-        MagicMock(is_success=True, json=MagicMock(return_value=page_2)),
-    ]
-    mock_get_client.return_value = mock_client  # type: ignore  # noqa: PGH003
+    # Mock the HTTP responses using pytest-httpx
+    httpx_mock.add_response(
+        url=f"{backend.config.portia_api_endpoint}/api/v0/evals/dataset-test-cases/?dataset_name=myset&page=1",
+        json=page_1,
+        status_code=200,
+    )
+    httpx_mock.add_response(
+        url=f"{backend.config.portia_api_endpoint}/api/v0/evals/dataset-test-cases/?dataset_name=myset&page=2",
+        json=page_2,
+        status_code=200,
+    )
 
     test_cases = backend.load_evals(dataset_name="myset", run_id="run-123")
 
@@ -61,15 +73,12 @@ def test_load_evals_pagination(mock_get_client: httpx.Client) -> None:
     assert test_cases[1].testcase == "tc2"
     assert test_cases[1].input_config.value == "world"
 
-    # Ensure pagination happened
-    assert mock_client.get.call_count == 2
-    mock_get_client.assert_called_once_with(config)  # type: ignore  # noqa: PGH003
+    # Verify that both requests were made
+    assert len(httpx_mock.get_requests()) == 2
 
 
-def test_check_response_raises_on_error() -> None:
+def test_check_response_raises_on_error(backend: PortiaBackend) -> None:
     """Test that check_response raises ValueError for non-success response."""
-    backend = PortiaBackend(config=get_test_config())
-
     # Simulate an error response
     response = httpx.Response(status_code=400, content=b'{"detail": "Bad request"}')
 

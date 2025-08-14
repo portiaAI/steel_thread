@@ -39,7 +39,7 @@ class PortiaStreamBackend(BaseModel):
             httpx.Client: A configured HTTP client.
 
         """
-        return PortiaCloudClient().get_client(self.config)
+        return PortiaCloudClient().new_client(self.config)
 
     def check_response(self, response: httpx.Response) -> None:
         """Validate the response from Portia API.
@@ -75,14 +75,18 @@ class PortiaStreamBackend(BaseModel):
         """Load stream items from the Portia API with pagination."""
         client = self.client()
         page = 1
-        url = f"/api/v0/evals/stream-items/?stream_id={stream_id}&page={page}"
+        base_url = "/api/v0/evals/stream-items/?stream_id={stream_id}&page={page}"
         test_cases = []
 
         while page:
+            url = base_url.format(stream_id=stream_id, page=page)
             response = client.get(url)
             self.check_response(response)
             data = response.json()
-            for tc in data.get("results", []):
+            results = data.get("results", [])
+            if len(results) == 0:
+                return test_cases
+            for tc in results:
                 if len(test_cases) == batch_size:
                     return test_cases
                 test_cases.append(
@@ -105,13 +109,17 @@ class PortiaStreamBackend(BaseModel):
         """Load stream items from the Portia API with pagination."""
         client = self.client()
         page = 1
-        url = f"/api/v0/evals/stream-items/?stream_id={stream_id}&page={page}"
+        base_url = "/api/v0/evals/stream-items/?stream_id={stream_id}&page={page}"
         test_cases = []
         while page:
+            url = base_url.format(stream_id=stream_id, page=page)
             response = client.get(url)
             self.check_response(response)
             data = response.json()
-            for tc in data.get("results", []):
+            results = data.get("results", [])
+            if len(results) == 0:
+                return test_cases
+            for tc in results:
                 if len(test_cases) == batch_size:
                     return test_cases
                 test_cases.append(
