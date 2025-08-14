@@ -54,12 +54,12 @@ def test_load_evals_pagination(backend: PortiaBackend, httpx_mock: HTTPXMock) ->
 
     # Mock the HTTP responses using pytest-httpx
     httpx_mock.add_response(
-        url="http://localhost:8080/api/v0/evals/dataset-test-cases/?dataset_name=myset&page=1",
+        url=f"{backend.config.portia_api_endpoint}/api/v0/evals/dataset-test-cases/?dataset_name=myset&page=1",
         json=page_1,
         status_code=200,
     )
     httpx_mock.add_response(
-        url="http://localhost:8080/api/v0/evals/dataset-test-cases/?dataset_name=myset&page=2",
+        url=f"{backend.config.portia_api_endpoint}/api/v0/evals/dataset-test-cases/?dataset_name=myset&page=2",
         json=page_2,
         status_code=200,
     )
