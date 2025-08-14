@@ -261,7 +261,21 @@ def test_mark_processed_calls_patch(
 
 
 @patch("steelthread.streams.backend.PortiaCloudClient")
-def test_load_plan_stream_items_no_results(
+def test_load_plan_run_stream_items_no_results(
+    mock_client_class: MagicMock, backend: PortiaStreamBackend
+) -> None:
+    """Test load_plan_stream_items returns empty list if no results."""
+    mock_client = MagicMock()
+    mock_client_class.return_value.new_client.return_value = mock_client
+    mock_response = make_mock_response({"results": []}, 200)
+    mock_client.get.return_value = mock_response
+
+    items = backend.load_plan_run_stream_items("stream-123", batch_size=2)
+    assert len(items) == 0
+
+
+@patch("steelthread.streams.backend.PortiaCloudClient")
+def test_load_plan_stream_items_items_no_results(
     mock_client_class: MagicMock, backend: PortiaStreamBackend
 ) -> None:
     """Test load_plan_stream_items returns empty list if no results."""
