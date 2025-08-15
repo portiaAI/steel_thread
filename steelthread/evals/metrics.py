@@ -8,12 +8,11 @@ from portia.config import Config
 from portia.plan import Plan
 from portia.plan_run import PlanRun
 from portia.storage import PortiaCloudClient
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, field_serializer
 
 from steelthread.evals.models import EvalTestCase
 
 MIN_EXPLANATION_LENGTH = 10
-
 
 class EvalMetric(BaseModel):
     """A single record of an observation.
@@ -40,7 +39,7 @@ class EvalMetric(BaseModel):
     description: str
     expectation: str | list[str] | dict[str, str] | None
     actual_value: str | list[str] | dict[str, str] | None
-    eval_output: PlanRun | Plan | None = Field(
+    eval_output: dict[str, BaseModel] | None = Field(
         default=None,
         description="The Plan or PlanRun that was used to generate the metric.",
     )
@@ -55,6 +54,11 @@ class EvalMetric(BaseModel):
             raise ValueError("explanation must be at least 5 characters long")
         return v
 
+    @field_serializer("eval_output")
+    def serialize_eval_output(self, v: dict[str, BaseModel] | None) -> dict[str, str]:
+        """Serialize the eval output to a dictionary of strings."""
+        return {k: v.model_dump() for k, v in v.items()} if v else {}
+
     @classmethod
     def from_test_case(
         cls,
@@ -65,7 +69,7 @@ class EvalMetric(BaseModel):
         explanation: str | None = None,
         expectation: str | list[str] | dict[str, str] | None = None,
         actual_value: str | list[str] | dict[str, str] | None = None,
-        eval_output: PlanRun | Plan | None = None,
+        eval_output: dict[str, BaseModel] | None = None,
     ) -> "EvalMetric":
         """Create a metric from a test case.
 
@@ -77,7 +81,7 @@ class EvalMetric(BaseModel):
             explanation (str | None): An optional explanation of the score.
             expectation (str | list[str] | dict[str, str] | None): expected value
             actual_value (str | list[str] | dict[str, str] | None): actual value
-            eval_output (PlanRun | Plan | None): The output of the eval run.
+            eval_output (dict[str, BaseModel] | None): The output of the eval run.
 
         """
         return cls(

@@ -97,6 +97,14 @@ class AssertionEvaluator:
             case _:
                 raise ValueError(f"Unsupported assertion type: {assertion.type}")
 
+    def _format_eval_output(self) -> dict:
+        """Format the eval output for evaluation."""
+        return {
+            "plan_run": self.plan_run,
+            "plan": self.plan,
+            "metadata": self.metadata,
+        }
+
     def _evaluate_llm_judge(self, assertion: LLMAsJudgeAssertion) -> list[EvalMetric]:
         scorer = LLMScorer(self.config)
         metrics = scorer.score(
@@ -119,7 +127,7 @@ class AssertionEvaluator:
                 expectation=assertion.value,
                 description=m.description,
                 explanation=m.explanation,
-                eval_output=self.plan_run,
+                eval_output=self._format_eval_output(),
             )
             for m in metrics
         ]
@@ -137,7 +145,7 @@ class AssertionEvaluator:
             expectation=assertion_value,
             actual_value=actual_value,
             description="Whether the outcome exactly matches expected value",
-            eval_output=self.plan_run,
+            eval_output=self._format_eval_output(),
         )
 
     def _evaluate_final_output(self, assertion: FinalOutputAssertion) -> list[EvalMetric]:
@@ -172,7 +180,7 @@ class AssertionEvaluator:
                     actual_value=actual_value,
                     description=m.description,
                     explanation=m.explanation,
-                    eval_output=self.plan_run,
+                    eval_output=self._format_eval_output(),
                 )
                 for m in metrics
             ]
@@ -186,7 +194,7 @@ class AssertionEvaluator:
                 expectation=assertion_value,
                 actual_value=actual_value,
                 description="Exact or partial final output match",
-                eval_output=self.plan_run,
+                eval_output=self._format_eval_output(),
             )
         ]
 
@@ -202,6 +210,7 @@ class AssertionEvaluator:
             expectation=str(target),
             actual_value=str(actual),
             description="Normalized latency score",
+            eval_output=self._format_eval_output(),
         )
 
     def _evaluate_tool_calls(self, assertion: ToolCallsAssertion) -> EvalMetric:
@@ -233,7 +242,7 @@ class AssertionEvaluator:
             ],
             actual_value=[tc.tool_name for tc in self.metadata.tool_calls],
             description="Tool call usage score",
-            eval_output=self.plan_run,
+            eval_output=self._format_eval_output(),
         )
 
 
