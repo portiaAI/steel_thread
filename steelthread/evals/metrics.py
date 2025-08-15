@@ -5,14 +5,13 @@ from abc import ABC, abstractmethod
 import httpx
 import pandas as pd
 from portia.config import Config
-from portia.plan import Plan
-from portia.plan_run import PlanRun
 from portia.storage import PortiaCloudClient
-from pydantic import BaseModel, Field, field_validator, field_serializer
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from steelthread.evals.models import EvalTestCase
 
 MIN_EXPLANATION_LENGTH = 10
+
 
 class EvalMetric(BaseModel):
     """A single record of an observation.
@@ -55,7 +54,7 @@ class EvalMetric(BaseModel):
         return v
 
     @field_serializer("eval_output")
-    def serialize_eval_output(self, v: dict[str, BaseModel] | None) -> dict[str, str]:
+    def serialize_eval_output(self, v: dict[str, BaseModel] | None) -> dict:
         """Serialize the eval output to a dictionary of strings."""
         return {k: v.model_dump() for k, v in v.items()} if v else {}
 
