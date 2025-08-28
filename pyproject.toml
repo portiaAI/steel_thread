@@ -14,7 +14,7 @@ classifiers = ["Development Status :: 3 - Alpha"]
 
 dependencies = [
     "httpx>=0.28.1",
-    "portia-sdk-python[all]>=0.6.2",
+    "portia-sdk-python[all]>=0.7.2",
     "pydantic>=2.11.7",
 ]
 

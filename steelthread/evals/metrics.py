@@ -121,7 +121,7 @@ class PortiaEvalMetricsBackend(MetricsBackend):
 
     def client(self) -> httpx.Client:
         """Return an authenticated HTTP client."""
-        return PortiaCloudClient().new_client(self.config)
+        return PortiaCloudClient(self.config).new_client(self.config)
 
     def check_response(self, response: httpx.Response) -> None:
         """Raise if response is not successful."""

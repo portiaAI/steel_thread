@@ -39,7 +39,7 @@ class PortiaStreamBackend(BaseModel):
             httpx.Client: A configured HTTP client.
 
         """
-        return PortiaCloudClient().new_client(self.config)
+        return PortiaCloudClient(self.config).new_client(self.config)
 
     def check_response(self, response: httpx.Response) -> None:
         """Validate the response from Portia API.
