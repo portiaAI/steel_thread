@@ -185,6 +185,40 @@ def test_tool_stub_registry_resolves_stubs() -> None:
     assert resolved.return_callable is stub_fn
 
 
+def test_tool_stub_registry_resolves_stubs_with_str() -> None:
+    """Test resolving stubs."""
+
+    class DummyChildTool(Tool):
+        def run(self, ctx, *args, **kwargs) -> str:  # noqa: ANN001, ANN002, ANN003, ARG002
+            return "child-result"
+
+    tool = DummyChildTool(
+        id="my-tool",
+        name="Tool",
+        description="desc",
+        output_schema=("any", "any"),
+    )
+
+    registry = MagicMock()
+    registry.get_tools.return_value = [tool]
+
+    stub_registry = ToolStubRegistry(registry=registry, stubs={"my-tool": "ok"})
+    resolved = stub_registry.get_tool("my-tool")
+    assert isinstance(resolved, ToolStub)
+
+    plan, plan_run = get_test_plan_run()
+    result = resolved.run(
+        ToolRunContext(
+            end_user=EndUser(external_id=""),
+            plan_run=plan_run,
+            plan=plan,
+            clarifications=[],
+            config=get_test_config(),
+        )
+    )
+    assert result == "ok"
+
+
 def test_tool_stub_registry_fallbacks_and_calls_tracking() -> None:
     """Tool that is not explicitly stubbed."""
 
@@ -203,6 +237,55 @@ def test_tool_stub_registry_fallbacks_and_calls_tracking() -> None:
     registry.get_tool.return_value = base_tool
 
     stub_registry = ToolStubRegistry(registry=registry, stubs={})
+
+    resolved = stub_registry.get_tool("base-tool")
+    assert isinstance(resolved, ToolStub)
+    assert resolved.child_tool == base_tool
+
+    calls = stub_registry.get_tool_calls("base-tool")
+    assert calls == []
+
+    calls = stub_registry.get_tool_calls("other-tool")
+    assert calls == []
+
+    all_calls = stub_registry.get_tool_calls()
+    assert isinstance(all_calls, list)
+
+    def stub_response(ctx: ToolStubContext) -> str:  # noqa: ARG001
+        return "stub"
+
+    stub_registry = ToolStubRegistry(registry=registry, stubs={"base-tool": stub_response})
+
+    # should cache tool stubs
+    resolved1 = stub_registry.get_tool("base-tool")
+    assert isinstance(resolved, ToolStub)
+    resolved2 = stub_registry.get_tool("base-tool")
+    assert isinstance(resolved, ToolStub)
+    assert resolved1 == resolved2
+
+    tools = stub_registry.get_tools()
+    assert isinstance(tools, list)
+
+
+def test_tool_stub_registry_twice_wrapped_fallbacks_and_calls_tracking() -> None:
+    """Tool that is not explicitly stubbed."""
+
+    class DummyChildTool(Tool):
+        def run(self, ctx, *args, **kwargs) -> str:  # noqa: ANN001, ANN002, ANN003, ARG002
+            return "child-result"
+
+    base_tool = DummyChildTool(
+        id="base-tool",
+        name="Tool",
+        description="desc",
+        output_schema=("any", "any"),
+    )
+    registry = MagicMock()
+    registry.get_tools.return_value = [base_tool]
+    registry.get_tool.return_value = base_tool
+
+    inner_stub_registry = ToolStubRegistry(registry=registry, stubs={})
+    stub_registry = ToolStubRegistry(registry=inner_stub_registry, stubs={})
 
     resolved = stub_registry.get_tool("base-tool")
     assert isinstance(resolved, ToolStub)

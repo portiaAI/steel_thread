@@ -4,6 +4,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
+from steelthread.portia.tools import ToolResponseStub
+
 
 class InputConfig(BaseModel):
     """Configuration for test case input.
@@ -19,6 +21,7 @@ class InputConfig(BaseModel):
     type: Literal["query", "plan_id"]
     value: str
     tools: list[str] | None = None
+    tool_stubs: dict[str, ToolResponseStub] | None = None
     end_user_id: str | None = None
 
 

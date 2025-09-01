@@ -9,7 +9,7 @@ from portia import (
     ToolRegistry,
     ToolRunContext,
 )
-from portia.common import combine_args_kwargs
+from portia.common import SERIALIZABLE_TYPE_VAR, combine_args_kwargs
 from portia.tool_call import ToolCallRecord, ToolCallStatus
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,7 @@ class ToolStubContext(BaseModel):
     kwargs: dict[str, Any]
 
 
-ToolResponseStub = Callable[[ToolStubContext], Any]
+ToolResponseStub = Callable[[ToolStubContext], Any] | SERIALIZABLE_TYPE_VAR
 
 
 class ToolStub(Tool):
@@ -175,7 +175,15 @@ class ToolStubRegistry(ToolRegistry):
         if tool.id in self.stubbed_tools:
             return self.stubbed_tools[tool.id]
 
-        if tool_id in self.stubs:
+        if isinstance(tool, ToolStub):
+            # this is just a slightly nicer way of handling the case we have a ToolStubRegistry
+            # wrapping another ToolStubRegistry.
+            tool_stub = tool
+        elif tool_id in self.stubs:
+            return_callable = self.stubs[tool.id]
+            if not callable(return_callable):
+                return_callable = lambda _: self.stubs[tool.id]  # noqa: E731
+
             tool_stub = ToolStub(
                 id=tool.id,
                 name=tool.name,
@@ -183,7 +191,7 @@ class ToolStubRegistry(ToolRegistry):
                 args_schema=tool.args_schema,
                 output_schema=tool.output_schema,
                 should_summarize=tool.should_summarize,
-                return_callable=self.stubs[tool.id],
+                return_callable=return_callable,
                 tool_calls=[],
             )
         else:
