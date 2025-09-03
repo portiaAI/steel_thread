@@ -68,6 +68,7 @@ def test_base_evaluator_default_method_returns_empty_list() -> None:
     test_case = EvalTestCase(
         dataset="d",
         testcase="t",
+        test_case_name="test",
         run="r",
         input_config=InputConfig(type="query", value="test"),
         assertions=[],

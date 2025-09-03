@@ -137,6 +137,7 @@ class EvalTestCase(BaseModel):
 
     dataset: str
     testcase: str
+    test_case_name: str
     run: str
     input_config: InputConfig
     assertions: list[Assertion]

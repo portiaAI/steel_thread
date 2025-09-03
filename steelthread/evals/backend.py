@@ -56,7 +56,13 @@ class PortiaBackend(BaseModel):
             self.check_response(response)
             data = response.json()
             test_cases.extend(
-                EvalTestCase(**tc, testcase=tc["id"], run=run_id) for tc in data.get("results", [])
+                EvalTestCase(
+                    **tc,
+                    testcase=tc["id"],
+                    test_case_name=tc["description"],
+                    run=run_id,
+                )
+                for tc in data.get("results", [])
             )
             if data["current_page"] != data["total_pages"]:
                 page += 1

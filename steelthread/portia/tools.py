@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 class ToolStubContext(BaseModel):
     """Context passed to tool stubs."""
 
+    test_case_name: str
     tool_call_index: int
     original_context: ToolRunContext
     original_tool: Tool | None
@@ -51,6 +52,7 @@ class ToolStub(Tool):
     tool_calls: list[ToolCallRecord] = Field(
         description="A list of all the tool calls this tool has seen."
     )
+    test_case_name: str = Field(description="The name of the test case.")
 
     def run(
         self,
@@ -84,6 +86,7 @@ class ToolStub(Tool):
                     args=args,
                     kwargs=kwargs,
                     original_tool=self.child_tool,
+                    test_case_name=self.test_case_name,
                 )
                 tool_output = self.return_callable(stub_ctx)
             except Exception as e:  # noqa: BLE001
@@ -127,17 +130,24 @@ class ToolStubRegistry(ToolRegistry):
 
     """
 
-    def __init__(self, registry: ToolRegistry, stubs: dict[str, ToolResponseStub]) -> None:
+    def __init__(
+        self,
+        registry: ToolRegistry,
+        stubs: dict[str, ToolResponseStub],
+        test_case_name: str,
+    ) -> None:
         """Initialize the stub registry.
 
         Args:
             registry (ToolRegistry): The original registry to wrap.
             stubs (dict[str, ToolResponseStub]): Stub response functions keyed by tool ID.
+            test_case_name (str): The name of the test case.
 
         """
         super().__init__(registry.get_tools())
         self.stubs = stubs
         self.stubbed_tools: dict[str, ToolStub] = {}
+        self.test_case_name = test_case_name
 
     def get_tool_calls(self, tool_id: str | None = None) -> list[ToolCallRecord]:
         """Get recorded tool calls for a specific stubbed tool or all stubbed tools.
@@ -185,6 +195,7 @@ class ToolStubRegistry(ToolRegistry):
                 should_summarize=tool.should_summarize,
                 return_callable=self.stubs[tool.id],
                 tool_calls=[],
+                test_case_name=self.test_case_name,
             )
         else:
             tool_stub = ToolStub(
@@ -197,6 +208,7 @@ class ToolStubRegistry(ToolRegistry):
                 child_tool=tool,
                 return_callable=None,
                 tool_calls=[],
+                test_case_name=self.test_case_name,
             )
 
         self.stubbed_tools[tool_id] = tool_stub

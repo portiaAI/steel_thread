@@ -35,6 +35,7 @@ def test_case() -> EvalTestCase:
         dataset="my-dataset",
         testcase="test-1",
         run="run-1",
+        test_case_name="test",
         input_config=InputConfig(type="query", value="query"),
         assertions=[],
     )

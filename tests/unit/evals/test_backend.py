@@ -31,6 +31,7 @@ def test_load_evals_pagination(backend: PortiaBackend, httpx_mock: HTTPXMock) ->
                 "id": "tc1",
                 "dataset": "myset",
                 "input_config": {"type": "query", "value": "hello"},
+                "description": "test",
                 "assertions": [],
             }
         ],
@@ -45,6 +46,7 @@ def test_load_evals_pagination(backend: PortiaBackend, httpx_mock: HTTPXMock) ->
                 "id": "tc2",
                 "dataset": "myset",
                 "input_config": {"type": "query", "value": "world"},
+                "description": "test2",
                 "assertions": [],
             }
         ],
