@@ -289,7 +289,7 @@ def test_tool_stub_registry_twice_wrapped_fallbacks_and_calls_tracking() -> None
         return "stub"
 
     stub_registry = ToolStubRegistry(
-        registry=registry, stubs={"base-tool": stub_response}, test_case_name="123"
+        registry=stub_registry, stubs={"base-tool": stub_response}, test_case_name="123"
     )
 
     # should cache tool stubs
