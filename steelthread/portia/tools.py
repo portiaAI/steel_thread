@@ -188,7 +188,7 @@ class ToolStubRegistry(ToolRegistry):
         if isinstance(tool, ToolStub):
             # this is just a slightly nicer way of handling the case we have a ToolStubRegistry
             # wrapping another ToolStubRegistry.
-            tool_stub = tool
+            tool_stub = tool.model_copy(deep=True)
             tool_stub.test_case_name = self.test_case_name
         elif tool_id in self.stubs:
             tool_stub = ToolStub(
