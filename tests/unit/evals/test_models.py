@@ -67,6 +67,7 @@ def test_eval_test_case_get_custom_assertion_found() -> None:
     """Test EvalTestCase.get_custom_assertion when key exists."""
     test_case = EvalTestCase(
         dataset="d1",
+        test_case_name="test",
         testcase="t1",
         run="r1",
         input_config=InputConfig(type="query", value="do it"),
@@ -81,6 +82,7 @@ def test_eval_test_case_get_custom_assertion_not_found() -> None:
     test_case = EvalTestCase(
         dataset="d1",
         testcase="t2",
+        test_case_name="test",
         run="r1",
         input_config=InputConfig(type="plan_id", value="p123"),
         assertions=[CustomAssertion(type="custom", value={"other": "not-here"})],
@@ -95,6 +97,7 @@ def test_eval_test_case_mixed_assertions() -> None:
         dataset="d",
         testcase="t",
         run="r",
+        test_case_name="test",
         input_config=InputConfig(type="query", value="x"),
         assertions=[
             OutcomeAssertion(type="outcome", value="FAILED"),

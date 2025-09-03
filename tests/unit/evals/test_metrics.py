@@ -22,6 +22,7 @@ def test_case() -> EvalTestCase:
         dataset="ds1",
         testcase="tc1",
         run="run1",
+        test_case_name="test",
         input_config=InputConfig(type="query", value="test input"),
         assertions=[],
     )

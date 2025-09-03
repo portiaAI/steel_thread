@@ -15,6 +15,7 @@ def mock_test_case() -> EvalTestCase:
         testcase="test-xyz",
         dataset="dataset",
         run="run",
+        test_case_name="test",
         input_config=InputConfig(type="query", value="do it"),
         assertions=[],
     )

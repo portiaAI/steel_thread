@@ -33,6 +33,7 @@ def test_tool_stub_with_return_callable(dummy_context: ToolRunContext) -> None:
 
     tool = ToolStub(
         id="test-tool",
+        test_case_name="test",
         name="Test Tool",
         description="Test",
         output_schema=("any", "any"),
@@ -63,6 +64,7 @@ def test_tool_stub_with_child_tool(dummy_context: ToolRunContext) -> None:
     tool = ToolStub(
         id="stub",
         name="Stub Tool",
+        test_case_name="test",
         description="",
         output_schema=("any", "any"),
         child_tool=child,
@@ -91,6 +93,7 @@ def test_tool_stub_with_child_tool_error(dummy_context: ToolRunContext) -> None:
         id="stub",
         name="Stub Tool",
         description="",
+        test_case_name="test",
         output_schema=("any", "any"),
         child_tool=child,
         tool_calls=[],
@@ -110,6 +113,7 @@ def test_tool_stub_failure_from_callable(dummy_context: ToolRunContext) -> None:
     tool = ToolStub(
         id="fail-tool",
         name="Fail Tool",
+        test_case_name="test",
         description="",
         output_schema=("any", "any"),
         return_callable=failing_callable,
@@ -126,6 +130,7 @@ def test_tool_stub_fails_without_child_or_callable(dummy_context: MagicMock) -> 
     tool = ToolStub(
         id="bad-tool",
         name="Bad Tool",
+        test_case_name="test",
         description="",
         output_schema=("any", "any"),
         tool_calls=[],
@@ -148,6 +153,7 @@ def test_tool_stub_sets_plan_run_id_on_clarification(dummy_context: MagicMock) -
     tool = ToolStub(
         id="clarify-tool",
         name="Clarify Tool",
+        test_case_name="test",
         description="",
         output_schema=("any", "any"),
         return_callable=returns_clarification,
@@ -179,7 +185,11 @@ def test_tool_stub_registry_resolves_stubs() -> None:
     def stub_fn(ctx: ToolStubContext) -> str:  # noqa: ARG001
         return "ok"
 
-    stub_registry = ToolStubRegistry(registry=registry, stubs={"my-tool": stub_fn})
+    stub_registry = ToolStubRegistry(
+        registry=registry,
+        stubs={"my-tool": stub_fn},
+        test_case_name="test",
+    )
     resolved = stub_registry.get_tool("my-tool")
     assert isinstance(resolved, ToolStub)
     assert resolved.return_callable is stub_fn
@@ -202,7 +212,11 @@ def test_tool_stub_registry_fallbacks_and_calls_tracking() -> None:
     registry.get_tools.return_value = [base_tool]
     registry.get_tool.return_value = base_tool
 
-    stub_registry = ToolStubRegistry(registry=registry, stubs={})
+    stub_registry = ToolStubRegistry(
+        registry=registry,
+        stubs={},
+        test_case_name="test",
+    )
 
     resolved = stub_registry.get_tool("base-tool")
     assert isinstance(resolved, ToolStub)
@@ -220,7 +234,11 @@ def test_tool_stub_registry_fallbacks_and_calls_tracking() -> None:
     def stub_response(ctx: ToolStubContext) -> str:  # noqa: ARG001
         return "stub"
 
-    stub_registry = ToolStubRegistry(registry=registry, stubs={"base-tool": stub_response})
+    stub_registry = ToolStubRegistry(
+        registry=registry,
+        stubs={"base-tool": stub_response},
+        test_case_name="test",
+    )
 
     # should cache tool stubs
     resolved1 = stub_registry.get_tool("base-tool")

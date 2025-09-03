@@ -18,6 +18,7 @@ def make_test_case(with_plan: bool) -> EvalTestCase:
         return EvalTestCase(
             dataset="ds",
             testcase="tc",
+            test_case_name="test",
             run="run",
             input_config=InputConfig(type="plan_id", value=str(plan.id)),
             assertions=[],
@@ -25,6 +26,7 @@ def make_test_case(with_plan: bool) -> EvalTestCase:
     return EvalTestCase(
         dataset="ds",
         testcase="tc",
+        test_case_name="test2",
         run="run",
         input_config=InputConfig(type="query", value="do something"),
         assertions=[],

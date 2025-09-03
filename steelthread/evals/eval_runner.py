@@ -92,7 +92,7 @@ class EvalRunner:
     def _evaluate_and_collect_metrics(self, tc: EvalTestCase) -> list[EvalMetric]:
         """Run a single test case with isolated tool registry and evaluators."""
         inner_registry = self.original_portia.tool_registry
-        tool_registry = ToolStubRegistry(inner_registry, stubs={})
+        tool_registry = ToolStubRegistry(inner_registry, stubs={}, test_case_name=tc.test_case_name)
 
         # Patch a local Portia with the test-specific tool registry
         portia = NoAuthPullPortia(config=self.config.portia_config, tools=tool_registry)
