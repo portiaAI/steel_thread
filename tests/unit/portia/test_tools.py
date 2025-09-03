@@ -4,7 +4,7 @@ from typing import Never
 from unittest.mock import MagicMock
 
 import pytest
-from portia import Clarification, ClarificationCategory, ToolRunContext
+from portia import Clarification, ClarificationCategory, InMemoryToolRegistry, ToolRunContext
 from portia.portia import EndUser
 from portia.tool import Tool
 
@@ -302,3 +302,56 @@ def test_tool_stub_registry_twice_wrapped_fallbacks_and_calls_tracking() -> None
 
     tools = stub_registry.get_tools()
     assert isinstance(tools, list)
+
+
+def test_tool_stub_registry_twice_wrapped_fallbacks() -> None:
+    """Tool that is not explicitly stubbed."""
+
+    class DummyChildTool(Tool):
+        def run(self, ctx, *args, **kwargs) -> str:  # noqa: ANN001, ANN002, ANN003, ARG002
+            return "child-result"
+
+    base_tool = DummyChildTool(
+        id="base-tool",
+        name="Tool",
+        description="desc",
+        output_schema=("any", "any"),
+    )
+
+    inner_stub_registry = ToolStubRegistry(
+        registry=InMemoryToolRegistry.from_local_tools([base_tool]),
+        stubs={},
+    )
+
+    stub_registry_1 = ToolStubRegistry(registry=inner_stub_registry, stubs={})
+    stub_registry_2 = ToolStubRegistry(registry=inner_stub_registry, stubs={})
+
+    tool_1 = stub_registry_1.get_tool("base-tool")
+    tool_2 = stub_registry_2.get_tool("base-tool")
+
+    plan, plan_run = get_test_plan_run()
+    ctx = ToolRunContext(
+        plan=plan,
+        plan_run=plan_run,
+        config=get_test_config(),
+        clarifications=[],
+        end_user=EndUser(external_id="user-123"),
+    )
+    tool_1.run(ctx, name="tool_1")
+
+    assert isinstance(tool_1, ToolStub)
+    assert len(tool_1.tool_calls) == 1
+    assert tool_1.tool_calls[0].input == {"name": "tool_1"}
+
+    plan, plan_run = get_test_plan_run()
+    ctx = ToolRunContext(
+        plan=plan,
+        plan_run=plan_run,
+        config=get_test_config(),
+        clarifications=[],
+        end_user=EndUser(external_id="user-123"),
+    )
+    tool_2.run(ctx, name="tool_2")
+    assert isinstance(tool_2, ToolStub)
+    assert len(tool_2.tool_calls) == 1
+    assert tool_2.tool_calls[0].input == {"name": "tool_2"}
