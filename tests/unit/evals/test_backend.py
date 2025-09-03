@@ -72,8 +72,10 @@ def test_load_evals_pagination(backend: PortiaBackend, httpx_mock: HTTPXMock) ->
     assert isinstance(test_cases[0], EvalTestCase)
     assert test_cases[0].testcase == "tc1"
     assert test_cases[0].run == "run-123"
+    assert test_cases[0].test_case_name == "test"
     assert test_cases[1].testcase == "tc2"
     assert test_cases[1].input_config.value == "world"
+    assert test_cases[1].test_case_name == "test2"
 
     # Verify that both requests were made
     assert len(httpx_mock.get_requests()) == 2

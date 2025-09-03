@@ -185,7 +185,12 @@ class ToolStubRegistry(ToolRegistry):
         if tool.id in self.stubbed_tools:
             return self.stubbed_tools[tool.id]
 
-        if tool_id in self.stubs:
+        if isinstance(tool, ToolStub):
+            # this is just a slightly nicer way of handling the case we have a ToolStubRegistry
+            # wrapping another ToolStubRegistry.
+            tool_stub = tool
+            tool_stub.test_case_name = self.test_case_name
+        elif tool_id in self.stubs:
             tool_stub = ToolStub(
                 id=tool.id,
                 name=tool.name,
