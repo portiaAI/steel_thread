@@ -134,7 +134,7 @@ class ToolStubRegistry(ToolRegistry):
         self,
         registry: ToolRegistry,
         stubs: dict[str, ToolResponseStub],
-        test_case_name: str,
+        test_case_name: str | None = None,
     ) -> None:
         """Initialize the stub registry.
 
@@ -147,7 +147,7 @@ class ToolStubRegistry(ToolRegistry):
         super().__init__(registry.get_tools())
         self.stubs = stubs
         self.stubbed_tools: dict[str, ToolStub] = {}
-        self.test_case_name = test_case_name
+        self.test_case_name = test_case_name or ""
 
     def get_tool_calls(self, tool_id: str | None = None) -> list[ToolCallRecord]:
         """Get recorded tool calls for a specific stubbed tool or all stubbed tools.
