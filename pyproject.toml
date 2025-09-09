@@ -1,6 +1,6 @@
 [project]
 name = "steel-thread"
-version = "0.1.19"
+version = "0.2.0"
 description = "Portia Labs Eval framework for evaluating agentic workflows."
 readme = "README.md"
 requires-python = ">=3.11"
