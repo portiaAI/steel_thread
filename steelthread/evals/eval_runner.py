@@ -4,7 +4,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from uuid import uuid4
 
-from portia import Config, Plan, PlanRun, Portia
+from portia import Config, Plan, PlanRun, Portia, logger
 from portia.prefixed_uuid import PlanUUID
 
 from steelthread.evals.backend import PortiaBackend
@@ -168,7 +168,7 @@ class EvalRunner:
             tuple: The plan run output and latency in milliseconds.
 
         """
-        print(f"Executing test case: {tc.input_config.type} - {tc.input_config.value}")  # noqa: T201
+        logger().debug(f"Executing test case: {tc.input_config.type} - {tc.input_config.value}")
         start = time.perf_counter()
         if tc.input_config.type == "query":
             plan = portia.plan(

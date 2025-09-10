@@ -1,6 +1,6 @@
 """LLM judge for metrics."""
 
-from portia import Config, Message
+from portia import Config, Message, logger
 from pydantic import BaseModel, Field, field_validator
 
 MIN_EXPLANATION_LENGTH = 10
@@ -113,7 +113,9 @@ class LLMScorer:
         class_name = self.__class__.__name__
         [
             # use the name of the class here
-            print(f"[{class_name}] {metric.name}:{metric.score} explanation: {metric.explanation}")  # noqa: T201
+            logger().debug(
+                f"[{class_name}] {metric.name}:{metric.score} explanation: {metric.explanation}"
+            )
             for metric in metrics
         ]
 
