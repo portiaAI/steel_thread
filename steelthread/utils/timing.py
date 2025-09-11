@@ -5,6 +5,13 @@ from __future__ import annotations
 import threading
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tqdm import tqdm
+else:
+    # Import tqdm directly when not type checking
+    import tqdm
 
 
 @dataclass
@@ -14,6 +21,7 @@ class EventTimer:
     total_events: int
     times: list[float] = field(default_factory=list)  # seconds per finished event
     _lock = threading.Lock()
+    _progress_bar: tqdm | None = field(default=None, init=False)
 
     def record_timing_seconds(self, seconds: float, update_display: bool) -> float:
         """Record one event's duration."""
@@ -64,17 +72,40 @@ class EventTimer:
             "eta": eta,
         }
 
-    # --- Predictions ---------------------------------------------------------
+    # --- Display -------------------------------------------------------------
+    def _init_progress_bar(self) -> None:
+        """Initialize tqdm progress bar if not already initialized."""
+        if self._progress_bar is None:
+            self._progress_bar = tqdm.tqdm(
+                total=self.total_events,
+                desc="Processing",
+                unit="events",
+            )
+
     def update_display(self) -> None:
-        """Print latest stats."""
-        predicted = self.predict_end()
-        msg = (
-            f"[{self.processed}/{self.total_events}] "
-            f"avg={self.avg_seconds:.2f}s | "
-            f"left={predicted['remaining_pretty']} | "
-            f"ETA={predicted['eta'].strftime('%H:%M:%S')}"
-        )
-        print(f"\r{msg}", end="", flush=True)  # noqa: T201
+        """Update progress bar with latest stats."""
+        self._init_progress_bar()
+
+        if self._progress_bar is not None:
+            predicted = self.predict_end()
+            # Update progress bar position and postfix
+            current_progress = self.processed
+            if current_progress > self._progress_bar.n:
+                self._progress_bar.update(current_progress - self._progress_bar.n)
+
+            # Update postfix with timing information
+            postfix = (
+                f"avg={self.avg_seconds:.2f}s, "
+                f"left={predicted['remaining_pretty']}, "
+                f"eta={predicted['eta'].strftime('%H:%M:%S')}"
+            )
+            self._progress_bar.set_postfix_str(postfix)
+
+    def close(self) -> None:
+        """Close the progress bar."""
+        if self._progress_bar is not None:
+            self._progress_bar.close()
+            self._progress_bar = None
 
     # --- Helpers -------------------------------------------------------------
     @staticmethod

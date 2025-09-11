@@ -16,6 +16,7 @@ dependencies = [
     "httpx>=0.28.1",
     "portia-sdk-python[all]>=0.7.2",
     "pydantic>=2.11.7",
+    "tqdm>=4.66.0",
 ]
 
 [dependency-groups]
