@@ -129,7 +129,7 @@ st.run_evals(
     EvalConfig(
         eval_dataset_name="evals_v1",
         config=config,
-        iterations=10,
+        iterations=3,
         evaluators=[DefaultEvaluator(config), EmojiEvaluator(config)],
     ),
 )
