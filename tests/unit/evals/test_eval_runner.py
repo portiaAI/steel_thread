@@ -8,6 +8,7 @@ import pytest
 from steelthread.evals.eval_runner import EvalConfig, EvalRunner
 from steelthread.evals.metrics import EvalMetric
 from steelthread.evals.models import EvalTestCase, InputConfig
+from steelthread.utils.timing import EventTimer
 from tests.unit.utils import get_test_config, get_test_plan_run
 
 
@@ -115,7 +116,7 @@ def test_evaluate_and_collect_metrics(
     config.evaluators = [mock_evaluator]  # type: ignore  # noqa: PGH003
 
     runner = EvalRunner(portia=mock_portia_cls, config=config)
-    result = runner._evaluate_and_collect_metrics(test_case)
+    result = runner._evaluate_and_collect_metrics(test_case, EventTimer(total_events=1))
     assert isinstance(result, list)
     assert result[0].name == "clarity"
 
