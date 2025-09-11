@@ -107,22 +107,21 @@ class StreamProcessor:
             self.config.batch_size,
         )
 
-        progress = EventTimer(total_events=len(items))
+        with EventTimer(total_events=len(items)) as progress:
+            all_metrics: list[StreamMetric] = []
 
-        all_metrics: list[StreamMetric] = []
+            futures = []
+            with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
+                futures.extend(
+                    executor.submit(self._evaluate_plan_stream_item, item, progress) for item in items
+                )
 
-        futures = []
-        with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
-            futures.extend(
-                executor.submit(self._evaluate_plan_stream_item, item, progress) for item in items
-            )
-
-            for future in as_completed(futures):
-                result: list[StreamMetric] | StreamMetric | None = future.result()
-                if result:
-                    all_metrics.extend(result) if isinstance(result, list) else all_metrics.append(
-                        result
-                    )
+                for future in as_completed(futures):
+                    result: list[StreamMetric] | StreamMetric | None = future.result()
+                    if result:
+                        all_metrics.extend(result) if isinstance(result, list) else all_metrics.append(
+                            result
+                        )
 
         if len(all_metrics) > 0:
             for backend in self.config.metrics_backends:
@@ -155,23 +154,22 @@ class StreamProcessor:
             self.config.batch_size,
         )
 
-        progress = EventTimer(total_events=len(items))
+        with EventTimer(total_events=len(items)) as progress:
+            all_metrics: list[StreamMetric] = []
 
-        all_metrics: list[StreamMetric] = []
+            futures = []
+            with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
+                futures.extend(
+                    executor.submit(self._evaluate_plan_run_stream_item, item, progress)
+                    for item in items
+                )
 
-        futures = []
-        with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
-            futures.extend(
-                executor.submit(self._evaluate_plan_run_stream_item, item, progress)
-                for item in items
-            )
-
-            for future in as_completed(futures):
-                result: list[StreamMetric] | StreamMetric | None = future.result()
-                if result:
-                    all_metrics.extend(result) if isinstance(result, list) else all_metrics.append(
-                        result
-                    )
+                for future in as_completed(futures):
+                    result: list[StreamMetric] | StreamMetric | None = future.result()
+                    if result:
+                        all_metrics.extend(result) if isinstance(result, list) else all_metrics.append(
+                            result
+                        )
 
         if len(all_metrics) > 0:
             for backend in self.config.metrics_backends:

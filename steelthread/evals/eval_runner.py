@@ -104,21 +104,21 @@ class EvalRunner:
         all_metrics = []
 
         total_events = len(test_cases) * self.config.iterations
-        progress = EventTimer(total_events=total_events)
+        
+        with EventTimer(total_events=total_events) as progress:
+            futures = []
 
-        futures = []
+            with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
+                futures.extend(
+                    executor.submit(self._evaluate_and_collect_metrics, tc, progress)
+                    for tc in test_cases
+                    for _ in range(self.config.iterations)
+                )
 
-        with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
-            futures.extend(
-                executor.submit(self._evaluate_and_collect_metrics, tc, progress)
-                for tc in test_cases
-                for _ in range(self.config.iterations)
-            )
-
-            for future in as_completed(futures):
-                metrics = future.result()
-                if metrics:
-                    all_metrics.extend(metrics)
+                for future in as_completed(futures):
+                    metrics = future.result()
+                    if metrics:
+                        all_metrics.extend(metrics)
 
         if len(all_metrics) > 0:
             for backend in self.config.metrics_backends:
