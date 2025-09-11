@@ -40,7 +40,7 @@ st = SteelThread()
 
 # Process stream
 st.process_stream(
-    StreamConfig(stream_name="stream_v2", config=config, additional_tags={"feeling": "neutral"})
+    StreamConfig(stream_name="stream_v1", config=config, additional_tags={"feeling": "neutral"})
 )
 
 # Run evals
@@ -129,7 +129,7 @@ st.run_evals(
     EvalConfig(
         eval_dataset_name="evals_v1",
         config=config,
-        iterations=1,
+        iterations=3,
         evaluators=[DefaultEvaluator(config), EmojiEvaluator(config)],
     ),
 )

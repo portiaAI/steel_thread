@@ -1,6 +1,7 @@
 """Stream Processor for steel thread."""
 
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from portia import Config
@@ -17,6 +18,7 @@ from steelthread.streams.metrics import (
 )
 from steelthread.streams.models import PlanRunStreamItem, PlanStreamItem, Stream, StreamSource
 from steelthread.streams.tags import StreamMetricTagger
+from steelthread.utils.timing import EventTimer
 
 
 class StreamConfig:
@@ -92,7 +94,6 @@ class StreamProcessor:
         - Marks cases as processed and writes metrics to backends.
         """
         stream = self.backend.get_stream(self.config.stream_name)
-
         if stream.source == StreamSource.PLAN:
             return self._process_plan(stream)
         if stream.source == StreamSource.PLAN_RUN:
@@ -105,52 +106,15 @@ class StreamProcessor:
             stream.id,
             self.config.batch_size,
         )
-        all_metrics: list[StreamMetric] = []
 
-        futures = []
-        with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
-            futures.extend(executor.submit(self._evaluate_plan_stream_item, item) for item in items)
-
-            for future in as_completed(futures):
-                result: list[StreamMetric] | StreamMetric | None = future.result()
-                if result:
-                    all_metrics.extend(result) if isinstance(result, list) else all_metrics.append(
-                        result
-                    )
-
-        if len(all_metrics) > 0:
-            for backend in self.config.metrics_backends:
-                backend.save_metrics(all_metrics)
-
-    def _evaluate_plan_stream_item(self, stream_item: PlanStreamItem) -> list[StreamMetric]:
-        """Evaluate a single test case across all evaluators."""
-        metrics_out = []
-        for evaluator in self.config.evaluators:
-            metrics = evaluator.process_plan(stream_item)
-            if metrics:
-                metrics_out.extend(
-                    StreamMetricTagger.attach_tags(
-                        metrics,
-                        stream_item,
-                        self.config.additional_tags,
-                    )
-                )
-
-        self.backend.mark_processed(stream_item)
-        return metrics_out
-
-    def _process_plan_runs(self, stream: Stream) -> None:
-        items = self.backend.load_plan_run_stream_items(
-            stream.id,
-            self.config.batch_size,
-        )
+        progress = EventTimer(total_events=len(items))
 
         all_metrics: list[StreamMetric] = []
 
         futures = []
         with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
             futures.extend(
-                executor.submit(self._evaluate_plan_run_stream_item, item) for item in items
+                executor.submit(self._evaluate_plan_stream_item, item, progress) for item in items
             )
 
             for future in as_completed(futures):
@@ -164,9 +128,63 @@ class StreamProcessor:
             for backend in self.config.metrics_backends:
                 backend.save_metrics(all_metrics)
 
-    def _evaluate_plan_run_stream_item(self, stream_item: PlanRunStreamItem) -> list[StreamMetric]:
+    def _evaluate_plan_stream_item(
+        self, stream_item: PlanStreamItem, progress: EventTimer
+    ) -> list[StreamMetric]:
+        """Evaluate a single test case across all evaluators."""
+        metrics_out = []
+        start = time.perf_counter()
+        for evaluator in self.config.evaluators:
+            metrics = evaluator.process_plan(stream_item)
+            if metrics:
+                metrics_out.extend(
+                    StreamMetricTagger.attach_tags(
+                        metrics,
+                        stream_item,
+                        self.config.additional_tags,
+                    )
+                )
+        end = time.perf_counter()
+        progress.record_timing_seconds(end - start, update_display=True)
+        self.backend.mark_processed(stream_item)
+        return metrics_out
+
+    def _process_plan_runs(self, stream: Stream) -> None:
+        items = self.backend.load_plan_run_stream_items(
+            stream.id,
+            self.config.batch_size,
+        )
+
+        progress = EventTimer(total_events=len(items))
+
+        all_metrics: list[StreamMetric] = []
+
+        futures = []
+        with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
+            futures.extend(
+                executor.submit(self._evaluate_plan_run_stream_item, item, progress)
+                for item in items
+            )
+
+            for future in as_completed(futures):
+                result: list[StreamMetric] | StreamMetric | None = future.result()
+                if result:
+                    all_metrics.extend(result) if isinstance(result, list) else all_metrics.append(
+                        result
+                    )
+
+        if len(all_metrics) > 0:
+            for backend in self.config.metrics_backends:
+                backend.save_metrics(all_metrics)
+
+    def _evaluate_plan_run_stream_item(
+        self,
+        stream_item: PlanRunStreamItem,
+        progress: EventTimer,
+    ) -> list[StreamMetric]:
         """Evaluate a single test case across all evaluators."""
         metrics_out: list[StreamMetric] = []
+        start = time.perf_counter()
         for evaluator in self.config.evaluators:
             metrics = evaluator.process_plan_run(stream_item)
             if metrics:
@@ -177,6 +195,7 @@ class StreamProcessor:
                         self.config.additional_tags,
                     )
                 )
-
+        end = time.perf_counter()
+        progress.record_timing_seconds(end - start, update_display=True)
         self.backend.mark_processed(stream_item)
         return metrics_out

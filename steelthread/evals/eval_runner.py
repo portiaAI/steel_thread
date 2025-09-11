@@ -21,6 +21,7 @@ from steelthread.evals.tags import EvalMetricTagger
 from steelthread.portia.portia import NoAuthPullPortia
 from steelthread.portia.storage import ReadOnlyStorage
 from steelthread.portia.tools import ToolStubRegistry
+from steelthread.utils.timing import EventTimer
 
 
 class EvalConfig:
@@ -89,7 +90,45 @@ class EvalRunner:
         self.config = config
         self.backend = PortiaBackend(config=config.portia_config)
 
-    def _evaluate_and_collect_metrics(self, tc: EvalTestCase) -> list[EvalMetric]:
+    def run(self) -> None:
+        """Run the evaluation process.
+
+        - Loads test cases from backend.
+        - Executes each test case multiple times.
+        - Applies evaluators to generate metrics.
+        - Saves metrics using configured backends.
+
+        """
+        run_id = str(uuid4())
+        test_cases = self.backend.load_evals(self.config.eval_dataset_name, run_id)
+        all_metrics = []
+
+        total_events = len(test_cases) * self.config.iterations
+        progress = EventTimer(total_events=total_events)
+
+        futures = []
+
+        with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
+            futures.extend(
+                executor.submit(self._evaluate_and_collect_metrics, tc, progress)
+                for tc in test_cases
+                for _ in range(self.config.iterations)
+            )
+
+            for future in as_completed(futures):
+                metrics = future.result()
+                if metrics:
+                    all_metrics.extend(metrics)
+
+        if len(all_metrics) > 0:
+            for backend in self.config.metrics_backends:
+                backend.save_eval_metrics(all_metrics)
+
+    def _evaluate_and_collect_metrics(
+        self,
+        tc: EvalTestCase,
+        progress: EventTimer,
+    ) -> list[EvalMetric]:
         """Run a single test case with isolated tool registry and evaluators."""
         inner_registry = self.original_portia.tool_registry
         tool_registry = ToolStubRegistry(inner_registry, stubs={}, test_case_name=tc.test_case_name)
@@ -100,6 +139,7 @@ class EvalRunner:
 
         # Run the test case
         plan, plan_run, latency = self._run_test_case(tc, portia)
+        progress.record_timing_milliseconds(latency, update_display=True)
 
         # Evaluate with isolated evaluator instances
         all_metrics = []
@@ -125,37 +165,6 @@ class EvalRunner:
                     )
                 )
         return all_metrics
-
-    def run(self) -> None:
-        """Run the evaluation process.
-
-        - Loads test cases from backend.
-        - Executes each test case multiple times.
-        - Applies evaluators to generate metrics.
-        - Saves metrics using configured backends.
-
-        """
-        run_id = str(uuid4())
-        test_cases = self.backend.load_evals(self.config.eval_dataset_name, run_id)
-        all_metrics = []
-
-        futures = []
-
-        with ThreadPoolExecutor(max_workers=self.config.max_concurrency) as executor:
-            futures.extend(
-                executor.submit(self._evaluate_and_collect_metrics, tc)
-                for tc in test_cases
-                for _ in range(self.config.iterations)
-            )
-
-            for future in as_completed(futures):
-                metrics = future.result()
-                if metrics:
-                    all_metrics.extend(metrics)
-
-        if len(all_metrics) > 0:
-            for backend in self.config.metrics_backends:
-                backend.save_eval_metrics(all_metrics)
 
     def _run_test_case(self, tc: EvalTestCase, portia: Portia) -> tuple[Plan, PlanRun, float]:
         """Execute a single test case and record latency.
