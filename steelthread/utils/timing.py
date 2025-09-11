@@ -6,6 +6,8 @@ import threading
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
+from tqdm import tqdm
+
 
 @dataclass
 class EventTimer:
@@ -14,6 +16,7 @@ class EventTimer:
     total_events: int
     times: list[float] = field(default_factory=list)  # seconds per finished event
     _lock = threading.Lock()
+    _pbar: tqdm | None = field(default=None, init=False)
 
     def record_timing_seconds(self, seconds: float, update_display: bool) -> float:
         """Record one event's duration."""
@@ -66,15 +69,35 @@ class EventTimer:
 
     # --- Predictions ---------------------------------------------------------
     def update_display(self) -> None:
-        """Print latest stats."""
+        """Update progress bar with latest stats."""
+        if self._pbar is None:
+            # Initialize progress bar on first call
+            bar_format = (
+                "{desc}: {percentage:3.0f}%|{bar}| {n}/{total} "
+                "[{elapsed}<{remaining}, {rate_fmt}]"
+            )
+            self._pbar = tqdm(
+                total=self.total_events,
+                desc="Processing",
+                unit="events",
+                bar_format=bar_format,
+            )
+
         predicted = self.predict_end()
-        msg = (
-            f"[{self.processed}/{self.total_events}] "
-            f"avg={self.avg_seconds:.2f}s | "
-            f"left={predicted['remaining_pretty']} | "
-            f"ETA={predicted['eta'].strftime('%H:%M:%S')}"
+        description = (
+            f"Processing (avg={self.avg_seconds:.2f}s, "
+            f"left={predicted['remaining_pretty']}, "
+            f"ETA={predicted['eta'].strftime('%H:%M:%S')})"
         )
-        print(f"\r{msg}", end="", flush=True)  # noqa: T201
+        self._pbar.set_description(description)
+        self._pbar.n = self.processed
+        self._pbar.refresh()
+
+    def close_display(self) -> None:
+        """Close the progress bar."""
+        if self._pbar is not None:
+            self._pbar.close()
+            self._pbar = None
 
     # --- Helpers -------------------------------------------------------------
     @staticmethod
