@@ -5,6 +5,9 @@ from __future__ import annotations
 import threading
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from typing import Self
+
+from tqdm import tqdm
 
 
 @dataclass
@@ -14,6 +17,15 @@ class EventTimer:
     total_events: int
     times: list[float] = field(default_factory=list)  # seconds per finished event
     _lock = threading.Lock()
+    _pbar: tqdm | None = field(default=None, init=False)
+
+    def __enter__(self) -> Self:
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # noqa: ANN001
+        """Context manager exit with cleanup."""
+        self.close()
 
     def record_timing_seconds(self, seconds: float, update_display: bool) -> float:
         """Record one event's duration."""
@@ -64,17 +76,40 @@ class EventTimer:
             "eta": eta,
         }
 
-    # --- Predictions ---------------------------------------------------------
+    # --- Display -------------------------------------------------------------
+    def _init_pbar(self) -> None:
+        """Initialize the progress bar if not already initialized."""
+        if self._pbar is None:
+            self._pbar = tqdm(
+                total=self.total_events,
+                desc="Processing",
+                unit="events",
+                dynamic_ncols=True,
+                leave=True,
+            )
+
     def update_display(self) -> None:
-        """Print latest stats."""
-        predicted = self.predict_end()
-        msg = (
-            f"[{self.processed}/{self.total_events}] "
-            f"avg={self.avg_seconds:.2f}s | "
-            f"left={predicted['remaining_pretty']} | "
-            f"ETA={predicted['eta'].strftime('%H:%M:%S')}"
-        )
-        print(f"\r{msg}", end="", flush=True)  # noqa: T201
+        """Update progress bar with latest stats."""
+        self._init_pbar()
+        if self._pbar is not None:
+            predicted = self.predict_end()
+            # Update progress bar to current processed count
+            self._pbar.n = self.processed
+
+            # Create postfix with timing information
+            postfix_dict = {
+                "avg": f"{self.avg_seconds:.2f}s",
+                "left": predicted["remaining_pretty"],
+                "ETA": predicted["eta"].strftime("%H:%M:%S"),
+            }
+            self._pbar.set_postfix(postfix_dict)
+            self._pbar.refresh()
+
+    def close(self) -> None:
+        """Close the progress bar and clean up resources."""
+        if self._pbar is not None:
+            self._pbar.close()
+            self._pbar = None
 
     # --- Helpers -------------------------------------------------------------
     @staticmethod
